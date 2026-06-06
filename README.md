@@ -9,3 +9,7 @@ this repo is MIT, do whatever you want with the code, i don't care
 
 # Documentation
 you can read the Documentation [Here](DOCUMENTATION.md)
+
+# Languages
+1. English
+2. Japanese (hiragana only, experimental, looking for native speaker feedback)
