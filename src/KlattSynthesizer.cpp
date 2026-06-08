@@ -100,6 +100,7 @@ namespace SharpVox {
 
         _cycleCount = 0;
         _fryStallSamples = 0;
+        _diploPhase = 0;
 
         _sgD1 = _sgD2 = 0.0f;
 
@@ -309,6 +310,7 @@ namespace SharpVox {
             _diploScale = 1.0f;
             _cycleCount = 0;
             _fryStallSamples = 0;
+            _diploPhase = 0;
 
             _sgD1 = _sgD2 = 0;
             _f1D1 = _f1D2 = _f2D1 = _f2D2 = _f3D1 = _f3D2 = _f4D1 = _f4D2 = _f5cD1 = _f5cD2 = 0;
@@ -469,11 +471,6 @@ namespace SharpVox {
                             float shimDepth = Shimmer * 0.002f;
                             _shimmerScale = 1.0f + ((NextNoise() - 128) / 128.0f) * shimDepth;
                         }
-                        if (Diplophonia > 0) {
-                            _cycleCount++;
-                            float weakRatio = std::max(0.0f, 1.0f - Diplophonia * 0.01f);
-                            _diploScale = (_cycleCount & 1) == 0 ? 1.0f : weakRatio;
-                        }
                         if (Jitter > 0) {
                             int32_t jitterRange = (int32_t)(Jitter * 0.0005f * (1 << 24));
                             _glotPhase = (_glotPhase + ((NextNoise() - 128) * jitterRange >> 7)) & 0xFFFFFF;
@@ -488,10 +485,11 @@ namespace SharpVox {
                         }
                     }
 
+                    float effOq = (FryAmount > 0) ? std::max(0.05f, _lfOq * (1.0f - FryAmount * 0.003f)) : _lfOq;
                     float phi = float(_glotPhase) * (1.0f / 16777216.0f);
                     float rawE;
-                    if (phi < _lfOq) {
-                        float tau = phi / _lfOq;
+                    if (phi < effOq) {
+                        float tau = phi / effOq;
                         rawE = tau * (0.33333333f - tau * 0.5f);
                     } else {
                         rawE = 0.0f;
@@ -515,13 +513,26 @@ namespace SharpVox {
                         _chorusPhase = (_chorusPhaseInc + _chorusPhase) & 0xFFFFFF;
                         float phi2 = float(_chorusPhase) * (1.0f / 16777216.0f);
                         float rawE2;
-                        if (phi2 < _lfOq) {
-                            float tau2 = phi2 / _lfOq;
+                        if (phi2 < effOq) {
+                            float tau2 = phi2 / effOq;
                             rawE2 = tau2 * (0.33333333f - tau2 * 0.5f);
                         } else {
                             rawE2 = 0.0f;
                         }
                         glotSample = (glotSample + rawE2 * _lfGain) * 0.5f;
+                    }
+
+#ifdef SHARPVOX_SAMPLED_GLOT
+                    if (Diplophonia > 0 && !_useSampledGlot) {
+#else
+                    if (Diplophonia > 0) {
+#endif
+                        _diploPhase = (_diploPhase + (_glotPhaseInc >> 1)) & 0xFFFFFF;
+                        float phiD = float(_diploPhase) * (1.0f / 16777216.0f);
+                        if (phiD < effOq) {
+                            float tauD = phiD / effOq;
+                            glotSample += (tauD * (0.33333333f - tauD * 0.5f)) * _lfGain * (Diplophonia * 0.007f);
+                        }
                     }
 
                     // Spectral tilt: 1-pole IIR lowpass y[n] = (1-d)*x[n] + d*y[n-1].
@@ -531,7 +542,7 @@ namespace SharpVox {
                     _tiltPrev = tiltedSample;
                     glotSample = tiltedSample;
 
-                    cascadeIn = glotSample * voiceAmpTrem * _shimmerScale * _diploScale / 8192.0f;
+                    cascadeIn = glotSample * voiceAmpTrem * _shimmerScale / 8192.0f;
 
                     // Subglottal resonance: ~350 Hz chest cavity coupling.
                     if (SubglottalAmt > 0) {

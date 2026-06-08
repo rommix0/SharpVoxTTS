@@ -177,11 +177,12 @@ namespace SharpVox {
         // Precomputed (1<<24)/sampleRate in Q4 for integer glotPhaseInc calculation.
         int32_t _phaseIncPerHz_q4;
 
-        //  Source perturbation (updated at glottal cycle boundary) 
+        //  Source perturbation (updated at glottal cycle boundary)
         float   _shimmerScale;
         float   _diploScale;
         int32_t _cycleCount;
         int32_t _fryStallSamples;
+        int32_t _diploPhase;
 
         //  Modulation oscillator state 
         // Phases in [0, 1<<17) representing [0, 2).

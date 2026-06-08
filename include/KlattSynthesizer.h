@@ -178,6 +178,7 @@ namespace SharpVox {
         float _diploScale = 1.0f;
         int32_t _cycleCount;
         int32_t _fryStallSamples;
+        int32_t _diploPhase = 0;
 
         // Subglottal resonator fixed at ~350 Hz (chest-cavity coupling).
         float _sgA, _sgB, _sgC;

@@ -163,7 +163,7 @@ KlattSynthesizerFP::KlattSynthesizerFP(int32_t sampleRate) {
 #endif
 
     _shimmerScale=1.0f; _diploScale=1.0f;
-    _cycleCount=0; _fryStallSamples=0;
+    _cycleCount=0; _fryStallSamples=0; _diploPhase=0;
 
     _vibratoPhase_fp=0; _tremoloPhase_fp=0;
     _vibDepth_q8=0; _vibRate_q8=0;
@@ -395,7 +395,7 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
     if (_voiceAmp_q8==0 && _fricAmp_q8==0 && (tVoiceAmp>0 || tFricAmp>0)) {
         _glotPhase=0; _chorusPhase=0;
         _shimmerScale=1.0f; _diploScale=1.0f;
-        _cycleCount=0; _fryStallSamples=0;
+        _cycleCount=0; _fryStallSamples=0; _diploPhase=0;
 #ifdef SHARPVOX_SAMPLED_GLOT
         _sgPhase=0.0f;
 #endif
@@ -570,11 +570,6 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
                         float sd = Shimmer * 0.002f;
                         _shimmerScale = 1.0f + ((NextNoise()-128)/128.0f) * sd;
                     }
-                    if (Diplophonia > 0) {
-                        _cycleCount++;
-                        float wr = std::max(0.0f, 1.0f - Diplophonia*0.01f);
-                        _diploScale = (_cycleCount&1)==0 ? 1.0f : wr;
-                    }
                     if (Jitter > 0) {
                         int32_t jr = (int32_t)(Jitter * 0.0005f * (1<<24));
                         _glotPhase = (_glotPhase + ((NextNoise()-128)*jr>>7)) & 0xFFFFFF;
@@ -586,6 +581,10 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
                         if (_fryStallSamples>0) _glotPhase=0;
                     }
                 }
+
+                float fryFactor = (FryAmount > 0) ? std::max(0.05f, 1.0f - FryAmount * 0.003f) : 1.0f;
+                int32_t effNe = (int32_t)(_Ne_fp * fryFactor);
+                float effInvNe = (effNe > 0) ? (1.0f / (float)effNe) : _glotInvNe_f;
 
 #ifdef SHARPVOX_SAMPLED_GLOT
                 if (_useSampledGlot && _sgBufSize > 0) {
@@ -600,8 +599,8 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
 #endif
                 {
                     int32_t phi = (int32_t)_glotPhase;
-                    float tau = (float)phi * _glotInvNe_f;
-                    glotSample = (phi < _Ne_fp)
+                    float tau = (float)phi * effInvNe;
+                    glotSample = (phi < effNe)
                         ? (int32_t)(tau * (0.33333333f - tau * 0.5f) * _voiceGain_f)
                         : 0;
                 }
@@ -619,6 +618,19 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
                     glotSample = (glotSample + chorus) / 2;
                 }
 
+#ifdef SHARPVOX_SAMPLED_GLOT
+                if (Diplophonia > 0 && !_useSampledGlot) {
+#else
+                if (Diplophonia > 0) {
+#endif
+                    _diploPhase = (_diploPhase + (_glotPhaseInc >> 1)) & 0xFFFFFF;
+                    int32_t phiD = _diploPhase;
+                    if (phiD < effNe) {
+                        float tauD = (float)phiD * effInvNe;
+                        glotSample += (int32_t)(tauD * (0.33333333f - tauD * 0.5f) * _voiceGain_f * (Diplophonia * 0.007f));
+                    }
+                }
+
                 // Spectral tilt: 1-pole IIR lowpass y[n] = (1-d)*x[n] + d*y[n-1].
                 // Matches float variant. Clamp d to 0.95 (= 31130 Q15).
                 int32_t eTilt = _tilt_q15 + frameTiltBias_q15;
@@ -628,10 +640,8 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
                                                 + (int64_t)eTilt * _tiltPrev) >> 15);
                 _tiltPrev = tiltedSample;
 
-                // cascadeInF (float-scale) = tiltedSample * voiceAmpTrem * shimDiplo / 8192.
-                float shimDiplo = _shimmerScale * _diploScale;
                 cascadeInF = (float)tiltedSample * (float)voiceAmpTrem_q8
-                             * (shimDiplo / (256.0f * 8192.0f));
+                             * (_shimmerScale / (256.0f * 8192.0f));
 
                 // Subglottal resonance (~350 Hz chest-cavity coupling).
                 if (SubglottalAmt > 0) {
