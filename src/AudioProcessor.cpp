@@ -1088,7 +1088,9 @@ namespace SharpVox {
 
             // H deletion (Hertz 1982 rule 9): non-word-initial HH before an unstressed vowel
             // is typically elided in connected speech ("tell him" -> "tell-im").
+            // Never applies to Japanese: every mora's /h/ is phonemic regardless of position.
             if (curPhon == _HH_ && (curCtrl & kWord_Initial_Consonant) == 0
+                && (curCtrl & kJapaneseMora) == 0
                 && (nextFlags & kVowelF) != 0 && (nextCtrl & kPrimOrEmphStress) == 0) {
                 delFwd = true;
                 goto STUFF_BUFF;
