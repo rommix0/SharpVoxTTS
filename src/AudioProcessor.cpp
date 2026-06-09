@@ -1572,6 +1572,7 @@ namespace SharpVox {
         int32_t wdIndex = 0, firstWord = 0, lastWord = 0;
         int64_t wdType[64];
         int32_t stressCount = 1;
+        int32_t savedWdIndex = 0, savedFirstWord = 0, savedLastWord = 0;
 
         for (int32_t index = 0; index < _phonBuf2InIndex; index++) {
             int16_t  curPhon  = _phonBuf2[index];
@@ -1581,6 +1582,7 @@ namespace SharpVox {
             if ((curCtrl & kSilenceTypeField) != 0) {
                 pState = kStart;
                 wdIndex = 0; firstWord = 0; lastWord = 0; stressCount = 1;
+                lastState = kStart;
                 continue;
             }
 
@@ -1626,37 +1628,24 @@ namespace SharpVox {
                             _phonCtrlBuf2[index] |= kPitchFall;
                         }
                         pState = kFallen;
+                        savedWdIndex = wdIndex; savedFirstWord = firstWord; savedLastWord = lastWord;
                     } else if ((curCtrl & kPrimOrEmphStress) != 0 &&
                              CountStressVowelsTillBoundry(kTerm_End, index) == 0) {
                         if (_endPunctuation != _Comma_) {
                             _phonCtrlBuf2[index] |= kPitchFall;
                         }
                         pState = kFallen;
+                        savedWdIndex = wdIndex; savedFirstWord = firstWord; savedLastWord = lastWord;
                     }
                 }
             }
         }
 
-        wdIndex -= 2;
-        if (wdIndex >= 1 && pState != kFinished) {
-            pState = kFallen;
-            for (int32_t i = 0; i < wdIndex; i++) {
-                if (pState == kFallen) {
-                    wdType[i] = kPitchRise1;
-                    pState = kRaised;
-                } else {
-                    wdType[i] = kPitchFall1;
-                    pState = kFallen;
-                }
-            }
-            if (pState == kRaised) {
-                wdType[wdIndex] = kPitchFall1;
-                wdIndex++;
-            }
-
+        savedWdIndex -= 1;
+        if (savedWdIndex >= 1) {
             bool action = false;
             int32_t wi = 0;
-            for (int32_t index = firstWord; index < lastWord; index++) {
+            for (int32_t index = savedFirstWord; index < savedLastWord; index++) {
                 int16_t  curPhon  = _phonBuf2[index];
                 int64_t  curCtrl  = _phonCtrlBuf2[index];
                 uint32_t curFlags = Tables::GetFeatureFlags(curPhon);
@@ -1670,7 +1659,7 @@ namespace SharpVox {
                 if ((curFlags & kVowelF) != 0 && action) {
                     if (!AnyStressVowelsRemain(index)) {
                         action = false;
-                        if (wi < wdIndex) {
+                        if (wi < savedWdIndex && (curCtrl & kIsStressed) != 0) {
                             _phonCtrlBuf2[index] |= wdType[wi];
                         }
                         wi++;
@@ -1845,7 +1834,10 @@ namespace SharpVox {
                 }
 
                 // STRESS ACCENT (primary or emphatic)
-                if ((curStress & kPrimOrEmphStress) != 0) {
+                // Suppressed when a nuclear or body accent already fires on this vowel
+                // to avoid opposite-direction Tilt events stacking on the same segment.
+                if ((curStress & kPrimOrEmphStress) != 0 &&
+                    (curCtrl & (kPitchRise | kPitchFall | kPitchRise1 | kPitchFall1)) == 0) {
                     int16_t pitchT;
                     if (curStress == kEmphaticStress) {
                         pitchT = (int16_t)(kHZ_28 + (_vpEmphasisBoost * kHZ_14 / 100));
