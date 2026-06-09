@@ -1817,23 +1817,28 @@ namespace SharpVox {
                 }
 
                 // PRE-NUCLEAR HEAD (kPitchRise1 / kPitchFall1)
+                // kPitchRise1 (content word, L+H*-like): tilt +20 (Taylor L+H* ~ +0.3 = +19/64).
+                // kPitchFall1 (function word, H*-like): tilt -51, peak +40ms from vowel onset,
+                //   same alignment formula as the nuclear H* (Taylor 2000).
                 if ((curCtrl & kPitchRise1) != 0) {
                     int16_t raiseAmt1 = _vpRiseAmt1;
                     if (_endPunctuation == _Quest_ || _endPunctuation == _Tilde_) {
                         raiseAmt1 >>= 1;
                     }
-                    // Slight rise-fall shape: tilt +32 (mild rise dominance)
-                    StoreTiltEvent(raiseAmt1, +32, curDur, 0, kPitchRiseFall1_Flg);
+                    StoreTiltEvent(raiseAmt1, +20, curDur, 0, kPitchRiseFall1_Flg);
                 } else if ((curCtrl & kPitchFall1) != 0) {
                     int16_t fallAmt1 = _vpFallAmt1;
-                    // Slight fall shape: tilt -32
-                    StoreTiltEvent(fallAmt1, -32, curDur, 0, kPitchRiseFall1_Flg);
+                    int16_t dRise1 = (int16_t)(curDur * (64 - 51) / 128);
+                    int16_t timeT1 = (int16_t)((40 / kFrameTime) - dRise1);
+                    if (timeT1 < 0) timeT1 = (int16_t)0;
+                    StoreTiltEvent(fallAmt1, -51, curDur, timeT1, kPitchRiseFall1_Flg);
                 }
 
-                // STRESS ACCENT (primary or emphatic)
-                // Suppressed when a nuclear or body accent already fires on this vowel
-                // to avoid opposite-direction Tilt events stacking on the same segment.
-                if ((curStress & kPrimOrEmphStress) != 0 &&
+                // STRESS ACCENT (emphatic only)
+                // Per Taylor 2000, all F0 movement comes from assigned accents (nuclear/head).
+                // Primary-stressed but unaccented syllables have no F0 event.
+                // Only emphatic stress (user-commanded, e.g. ALL CAPS) fires a Tilt event.
+                if (curStress == kEmphaticStress &&
                     (curCtrl & (kPitchRise | kPitchFall | kPitchRise1 | kPitchFall1)) == 0) {
                     int16_t pitchT;
                     if (curStress == kEmphaticStress) {
@@ -1879,11 +1884,6 @@ namespace SharpVox {
 
                 // NUCLEAR FALL
                 if ((curCtrl & kPitchFall) != 0) {
-                    int16_t timeT = (int16_t)(curDur - (160 / kFrameTime));
-                    if (timeT < 25 / kFrameTime) {
-                        timeT = (int16_t)(25 / kFrameTime);
-                    }
-
                     int16_t fallAmt;
                     if ((curSylType & kTerm_End) != 0) {
                         if (_endPunctuation == _Comma_) {
@@ -1910,18 +1910,24 @@ namespace SharpVox {
                         fallAmt = _vpFallAmt;
                     }
 
-                    // Japanese: pure-fall with rise compensation (rise event already fired above).
-                    // English: single H* nuclear event, no rise compensation needed.
-                    // Tilt encodes accent shape per Taylor 2000: H* for declaratives (~79% of
-                    // natural accents), near-level for questions (boundary tone handles the rise).
+                    // Japanese: pure-fall with rise compensation; legacy timeT formula.
+                    // English: single H* nuclear event, tilt encodes accent shape (Taylor 2000).
+                    // timeT is computed so the peak (end of rise phase) lands at +40ms from
+                    // nucleus onset: timeT = 40ms - dRise, where dRise = curDur*(1+tilt)/2.
+                    // H* peak at +40ms is Taylor's measured mean for declarative accents.
                     if ((curCtrl & kJapaneseMora) != 0) {
+                        int16_t timeT = (int16_t)(curDur - (160 / kFrameTime));
+                        if (timeT < 25 / kFrameTime) timeT = (int16_t)(25 / kFrameTime);
                         fallAmt = (int16_t)(((int64_t)_vpAssertiveness * fallAmt >> 16) - _vpRiseAmt);
                         StoreTiltEvent((int16_t)(-fallAmt), -64, curDur, timeT, kPitchRiseFall_Flg);
                     } else {
-                        fallAmt = (int16_t)(((int64_t)_vpAssertiveness * fallAmt >> 16));
                         int16_t nucTilt = (_endPunctuation == _Quest_ || _endPunctuation == _Tilde_)
                             ? (int16_t)(-20)
                             : (int16_t)(-51);
+                        int16_t dRise = (int16_t)(curDur * (64 + nucTilt) / 128);
+                        int16_t timeT = (int16_t)((40 / kFrameTime) - dRise);
+                        if (timeT < 0) timeT = (int16_t)0;
+                        fallAmt = (int16_t)(((int64_t)_vpAssertiveness * fallAmt >> 16));
                         StoreTiltEvent((int16_t)(-fallAmt), nucTilt, curDur, timeT, kPitchRiseFall_Flg);
                     }
                     curBaseline += fallAmt;
