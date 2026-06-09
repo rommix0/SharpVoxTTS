@@ -296,6 +296,58 @@ namespace SharpVox {
     static const uint8_t nw_OCTOBER[]       = { 0x08, 0x30, 0x2E, 0x38, 0x10, 0x2D, 0x06 };
     static const uint8_t nw_NOVEMBER[]      = { 0x19, 0x10, 0x24, 0x38, 0x02, 0x18, 0x2D, 0x06 };
     static const uint8_t nw_DECEMBER[]      = { 0x2F, 0x04, 0x27, 0x38, 0x02, 0x18, 0x2D, 0x06 };
+    //    I-contractions (stripped "ILL"/"ID" are real words with wrong vowel)
+    static const uint8_t nw_I_M[]           = { 0x38, 0x0D, 0x18 };
+    static const uint8_t nw_I_LL[]          = { 0x38, 0x0D, 0x1E };
+    static const uint8_t nw_I_VE[]          = { 0x38, 0x0D, 0x24 };
+    static const uint8_t nw_I_D[]           = { 0x38, 0x0D, 0x2F };
+    //    YOU-contractions
+    static const uint8_t nw_YOU_RE[]        = { 0x1C, 0x38, 0x0A, 0x1D };
+    static const uint8_t nw_YOU_LL[]        = { 0x1C, 0x38, 0x0B, 0x1E };
+    static const uint8_t nw_YOU_VE[]        = { 0x1C, 0x38, 0x0B, 0x24 };
+    static const uint8_t nw_YOU_D[]         = { 0x1C, 0x38, 0x0B, 0x2F };
+    //    HE/SHE-contractions (stripped "HED"/"HELL"/"SHED"/"SHELL" are real words)
+    static const uint8_t nw_HE_S[]          = { 0x2B, 0x38, 0x00, 0x28 };
+    static const uint8_t nw_HE_D[]          = { 0x2B, 0x38, 0x00, 0x2F };
+    static const uint8_t nw_HE_LL[]         = { 0x2B, 0x38, 0x00, 0x1E };
+    static const uint8_t nw_SHE_S[]         = { 0x29, 0x38, 0x00, 0x28 };
+    static const uint8_t nw_SHE_D[]         = { 0x29, 0x38, 0x00, 0x2F };
+    static const uint8_t nw_SHE_LL[]        = { 0x29, 0x38, 0x00, 0x1E };
+    //    WE-contractions (stripped "WERE"/"WED"/"WELL" are real words with wrong vowel)
+    static const uint8_t nw_WE_RE[]         = { 0x1B, 0x38, 0x00, 0x1D };
+    static const uint8_t nw_WE_VE[]         = { 0x1B, 0x38, 0x00, 0x24 };
+    static const uint8_t nw_WE_D[]          = { 0x1B, 0x38, 0x00, 0x2F };
+    static const uint8_t nw_WE_LL[]         = { 0x1B, 0x38, 0x00, 0x1E };
+    //    THEY-contractions
+    static const uint8_t nw_THEY_RE[]       = { 0x26, 0x38, 0x0C, 0x1D };
+    static const uint8_t nw_THEY_VE[]       = { 0x26, 0x38, 0x0C, 0x24 };
+    static const uint8_t nw_THEY_D[]        = { 0x26, 0x38, 0x0C, 0x2F };
+    static const uint8_t nw_THEY_LL[]       = { 0x26, 0x38, 0x0C, 0x1E };
+    //    Negation contractions
+    static const uint8_t nw_ISN_T[]         = { 0x38, 0x01, 0x28, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_AREN_T[]        = { 0x38, 0x08, 0x1D, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_WASN_T[]        = { 0x1B, 0x38, 0x07, 0x28, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_WEREN_T[]       = { 0x1B, 0x38, 0x06, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_HASN_T[]        = { 0x2B, 0x38, 0x03, 0x28, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_HAVEN_T[]       = { 0x2B, 0x38, 0x03, 0x24, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_HADN_T[]        = { 0x2B, 0x38, 0x03, 0x2F, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_DOESN_T[]       = { 0x2F, 0x38, 0x07, 0x28, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_DIDN_T[]        = { 0x2F, 0x38, 0x01, 0x2F, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_WOULDN_T[]      = { 0x1B, 0x38, 0x0A, 0x2F, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_COULDN_T[]      = { 0x30, 0x38, 0x0A, 0x2F, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_SHOULDN_T[]     = { 0x29, 0x38, 0x0A, 0x2F, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_MUSTN_T[]       = { 0x18, 0x38, 0x07, 0x27, 0x05, 0x19, 0x2E };
+    static const uint8_t nw_NEEDN_T[]       = { 0x19, 0x38, 0x00, 0x2F, 0x05, 0x19, 0x2E };
+    //    Common contractions
+    static const uint8_t nw_THAT_S[]        = { 0x26, 0x38, 0x03, 0x2E, 0x27 };
+    static const uint8_t nw_WHAT_S[]        = { 0x1B, 0x38, 0x07, 0x2E, 0x27 };
+    static const uint8_t nw_THERE_S[]       = { 0x26, 0x38, 0x02, 0x1D, 0x28 };
+    static const uint8_t nw_HERE_S[]        = { 0x2B, 0x38, 0x01, 0x1D, 0x28 };
+    static const uint8_t nw_WHERE_S[]       = { 0x1B, 0x38, 0x02, 0x1D, 0x28 };
+    static const uint8_t nw_HOW_S[]         = { 0x2B, 0x38, 0x0F, 0x28 };
+    static const uint8_t nw_WHO_S[]         = { 0x2B, 0x38, 0x0B, 0x28 };
+    static const uint8_t nw_WHO_D[]         = { 0x2B, 0x38, 0x0B, 0x2F };
+    static const uint8_t nw_WHO_LL[]        = { 0x2B, 0x38, 0x0B, 0x1E };
 
     #define NW(key, arr) { key, arr, sizeof(arr) }
     static const NormWordEntry NormalizationWordsTableArr[] = {
@@ -457,6 +509,59 @@ namespace SharpVox {
         NW("OCTOBER",       nw_OCTOBER),
         NW("NOVEMBER",      nw_NOVEMBER),
         NW("DECEMBER",      nw_DECEMBER),
+        //    I-contractions
+        NW("I'M",           nw_I_M),
+        NW("I'LL",          nw_I_LL),
+        NW("I'VE",          nw_I_VE),
+        NW("I'D",           nw_I_D),
+        //    YOU-contractions
+        NW("YOU'RE",        nw_YOU_RE),
+        NW("YOU'LL",        nw_YOU_LL),
+        NW("YOU'VE",        nw_YOU_VE),
+        NW("YOU'D",         nw_YOU_D),
+        //    HE-contractions
+        NW("HE'S",          nw_HE_S),
+        NW("HE'D",          nw_HE_D),
+        NW("HE'LL",         nw_HE_LL),
+        //    SHE-contractions
+        NW("SHE'S",         nw_SHE_S),
+        NW("SHE'D",         nw_SHE_D),
+        NW("SHE'LL",        nw_SHE_LL),
+        //    WE-contractions
+        NW("WE'RE",         nw_WE_RE),
+        NW("WE'VE",         nw_WE_VE),
+        NW("WE'D",          nw_WE_D),
+        NW("WE'LL",         nw_WE_LL),
+        //    THEY-contractions
+        NW("THEY'RE",       nw_THEY_RE),
+        NW("THEY'VE",       nw_THEY_VE),
+        NW("THEY'D",        nw_THEY_D),
+        NW("THEY'LL",       nw_THEY_LL),
+        //    Negation contractions
+        NW("ISN'T",         nw_ISN_T),
+        NW("AREN'T",        nw_AREN_T),
+        NW("WASN'T",        nw_WASN_T),
+        NW("WEREN'T",       nw_WEREN_T),
+        NW("HASN'T",        nw_HASN_T),
+        NW("HAVEN'T",       nw_HAVEN_T),
+        NW("HADN'T",        nw_HADN_T),
+        NW("DOESN'T",       nw_DOESN_T),
+        NW("DIDN'T",        nw_DIDN_T),
+        NW("WOULDN'T",      nw_WOULDN_T),
+        NW("COULDN'T",      nw_COULDN_T),
+        NW("SHOULDN'T",     nw_SHOULDN_T),
+        NW("MUSTN'T",       nw_MUSTN_T),
+        NW("NEEDN'T",       nw_NEEDN_T),
+        //    Common contractions
+        NW("THAT'S",        nw_THAT_S),
+        NW("WHAT'S",        nw_WHAT_S),
+        NW("THERE'S",       nw_THERE_S),
+        NW("HERE'S",        nw_HERE_S),
+        NW("WHERE'S",       nw_WHERE_S),
+        NW("HOW'S",         nw_HOW_S),
+        NW("WHO'S",         nw_WHO_S),
+        NW("WHO'D",         nw_WHO_D),
+        NW("WHO'LL",        nw_WHO_LL),
     };
     #undef NW
 
