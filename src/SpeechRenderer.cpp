@@ -1004,7 +1004,7 @@ void SpeechRenderer::HeadRules(ControlBlock& cb, int32_t bt) {
                 if ((_prevPhonFlags & kLiqGlideF) != 0) {
                     // Liquid-to-sonorant: start halfway between liquid endpoint and midpoint
                     _transLevel = (cb.prevP_END_Targ + _transLevel) >> 1;
-                    if (_prevPhon == _L_ && _curBlockIndex == kF1) {
+                    if ((_prevPhon == _L_ || _prevPhon == _EL_ || _prevPhon == _LX_) && _curBlockIndex == kF1) {
                         // Dark-L raises F1 noticeably at the following vowel onset
                         _transLevel += 80;
                     } else if (_prevPhon == _R_ && _curBlockIndex != kF1) {
@@ -1017,7 +1017,7 @@ void SpeechRenderer::HeadRules(ControlBlock& cb, int32_t bt) {
             } else {
                 // Liquids and glides glide gently from the previous formant position
                 _transLevel = (cb.prevP_END_Targ + _transLevel) >> 1;
-                _transTime  = 32 / kFrameTime;
+                _transTime  = (_curPhon == _L_ || _curPhon == _EL_ || _curPhon == _LX_) ? 50 / kFrameTime : 32 / kFrameTime;
             }
         }
 
@@ -1220,7 +1220,7 @@ void SpeechRenderer::TailRules(ControlBlock& cb, int32_t bt) {
                     if (_curBlockIndex == kF3) {
                         _transTime = 60 / kFrameTime;
                     }
-                    if (_nextPhon == _L_ && _curBlockIndex == kF1) {
+                    if ((_nextPhon == _L_ || _nextPhon == _EL_ || _nextPhon == _LX_) && _curBlockIndex == kF1) {
                         _transLevel += 80;
                     }
                 } else if (_nextPhon == _HH_) {
@@ -1229,7 +1229,7 @@ void SpeechRenderer::TailRules(ControlBlock& cb, int32_t bt) {
             } else {
                 if ((_nextPhonFlags & kLiqGlideF) == 0) {
                     _transLevel = (cb.curP_END_Targ + _transLevel) >> 1;
-                    _transTime  = 20 / kFrameTime;
+                    _transTime  = (_curPhon == _L_ || _curPhon == _EL_ || _curPhon == _LX_) ? 40 / kFrameTime : 20 / kFrameTime;
                 } else {
                     _transLevel = (cb.curP_END_Targ + _transLevel) >> 1;
                     _transTime  = 40 / kFrameTime;
