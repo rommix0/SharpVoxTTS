@@ -1331,10 +1331,15 @@ namespace SharpVox {
                 }
 
                 if (curIsVowel) {
-                    if ((curCtrl & kSyllableOrderField) == kMid_Syllable_In_Word) {
-                        percent = (int32_t)((int64_t)percent * 55 * pct >> 16);
-                    } else {
-                        percent = (int32_t)((int64_t)percent * 70 * pct >> 16);
+                    // Pitch-accented vowels are exempt from shortening: per Bolinger (1958),
+                    // duration increase is caused by accent execution, not lexical stress.
+                    bool hasPitchAccent = (curCtrl & (kPitchRise | kPitchFall | kPitchRise1 | kPitchFall1)) != 0;
+                    if (!hasPitchAccent) {
+                        if ((curCtrl & kSyllableOrderField) == kMid_Syllable_In_Word) {
+                            percent = (int32_t)((int64_t)percent * 55 * pct >> 16);
+                        } else {
+                            percent = (int32_t)((int64_t)percent * 70 * pct >> 16);
+                        }
                     }
                 } else {
                     if (curPhon >= _W_ && curPhon <= _L_) {
@@ -1753,9 +1758,11 @@ namespace SharpVox {
     // PitchInterpolator can synthesize the parabolic F0 contour for each event.
     //
     // Nuclear accent (kPitchRise / kPitchFall):
-    //   The vowel bearing kPitchRise starts the nuclear accent (rise component).
-    //   The vowel bearing kPitchFall completes it (fall component).
-    //   Together they form one Tilt event with the rise on the way up and the fall on the way down.
+    //   kPitchRise marks the start of the nuclear region; no F0 event fires on this vowel.
+    //   kPitchFall carries the full nuclear accent as a single Tilt event per Taylor 2000.
+    //   English declaratives: tilt=-51 (H* shape: 80% fall, 20% rise lead-in, ~79% of natural accents).
+    //   English questions: tilt=-20 (near-level nuclear before rising boundary tone).
+    //   Japanese: legacy split-event model retained (abrupt mora-boundary pitch accent).
     //
     // Pre-nuclear head (kPitchRise1 / kPitchFall1):
     //   Smaller Tilt events on stressed vowels in the pre-nuclear region.
@@ -1795,27 +1802,17 @@ namespace SharpVox {
             bool isVowelSlot = (curFlags & kVowelF) != 0 ||
                 ((curCtrl & kJapaneseMora) != 0 && curPhon == _N_);
             if (isVowelSlot) {
-                // NUCLEAR RISE - begin of nuclear accent
+                // NUCLEAR RISE - marks the start of the nuclear region.
+                // Japanese: fire an abrupt mora-level rise event (mora-timed pitch accent).
+                // English: no separate event; the nuclear accent fires as a single H* event
+                // at the kPitchFall vowel below (Taylor 2000 single-event-per-nucleus model).
                 if ((curCtrl & kPitchRise) != 0 && pitchIsFallen) {
-                    int16_t riseAmt = _vpRiseAmt;
-                    if (_endPunctuation == _Quest_ || _endPunctuation == _Tilde_) {
-                        riseAmt >>= 1;
+                    if ((curCtrl & kJapaneseMora) != 0) {
+                        int16_t riseAmt = _vpRiseAmt;
+                        int16_t riseDur = (int16_t)std::min((int32_t)curDur, (int32_t)(30 / kFrameTime));
+                        StoreTiltEvent(riseAmt, +64, riseDur, 0, kPitchRiseFall_Flg);
+                        curBaseline += riseAmt;
                     }
-                    // Pure-rise event (tilt = +64): only the rise component fires here;
-                    // the matching fall fires at the kPitchFall vowel below.
-                    // JP pitch steps are abrupt (mora-boundary aligned), so cap rise
-                    // duration at 30ms rather than spreading across the full mora.
-                    // JP never uses the English early-trigger offset; timeT stays 0.
-                    int16_t timeT = ((curCtrl & kJapaneseMora) != 0)
-                        ? (int16_t)0
-                        : ((curCtrl & kPitchFall) != 0
-                            ? (int16_t)((-80) / kFrameTime)
-                            : (int16_t)0);
-                    int16_t riseDur = (curCtrl & kJapaneseMora) != 0
-                        ? (int16_t)std::min((int32_t)curDur, (int32_t)(30 / kFrameTime))
-                        : curDur;
-                    StoreTiltEvent(riseAmt, +64, riseDur, timeT, kPitchRiseFall_Flg);
-                    curBaseline += riseAmt;
                     pitchIsFallen = false;
                 }
 
@@ -1913,10 +1910,20 @@ namespace SharpVox {
                         fallAmt = _vpFallAmt;
                     }
 
-                    fallAmt = (int16_t)(((int64_t)_vpAssertiveness * fallAmt >> 16) - _vpRiseAmt);
-
-                    // Pure-fall event (tilt = -64)
-                    StoreTiltEvent((int16_t)(-fallAmt), -64, curDur, timeT, kPitchRiseFall_Flg);
+                    // Japanese: pure-fall with rise compensation (rise event already fired above).
+                    // English: single H* nuclear event, no rise compensation needed.
+                    // Tilt encodes accent shape per Taylor 2000: H* for declaratives (~79% of
+                    // natural accents), near-level for questions (boundary tone handles the rise).
+                    if ((curCtrl & kJapaneseMora) != 0) {
+                        fallAmt = (int16_t)(((int64_t)_vpAssertiveness * fallAmt >> 16) - _vpRiseAmt);
+                        StoreTiltEvent((int16_t)(-fallAmt), -64, curDur, timeT, kPitchRiseFall_Flg);
+                    } else {
+                        fallAmt = (int16_t)(((int64_t)_vpAssertiveness * fallAmt >> 16));
+                        int16_t nucTilt = (_endPunctuation == _Quest_ || _endPunctuation == _Tilde_)
+                            ? (int16_t)(-20)
+                            : (int16_t)(-51);
+                        StoreTiltEvent((int16_t)(-fallAmt), nucTilt, curDur, timeT, kPitchRiseFall_Flg);
+                    }
                     curBaseline += fallAmt;
                     pitchIsFallen = true;
                 }
