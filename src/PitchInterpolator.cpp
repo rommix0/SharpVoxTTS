@@ -76,20 +76,6 @@ namespace SharpVox {
         _curPhonCtrlSinging = 0;
         _flutterPhaseA = 0;
         _flutterPhaseB = 0;
-        _accentOrdinal = 0;
-
-        _totalFrames = 0;
-        for (int32_t i = 0; i < _dump.PhonBuf2InIndex; i++) {
-            _totalFrames += (i < (int32_t)_dump.DurBuf.size()) ? _dump.DurBuf[i] : 0;
-        }
-        _wordCount = 0;
-        for (int32_t i = 0; i < _dump.PhonBuf2InIndex; i++) {
-            if ((GetPhonCtrl(i) & kWord_Start_Bnd) != 0) {
-                _wordCount++;
-            }
-        }
-        _endDropAccum = 0;
-        _curFrame = 0;
         _dbgTiltExcursion = 0;
         _dbgBaselineOffset = 0;
         _dbgTotalOffset = 0;
@@ -403,19 +389,9 @@ namespace SharpVox {
                     _f0Smooth = 0;
                     _f0SmoothPrime = true;
                     _punctOffset = 0;
-                    _accentOrdinal = 0;
                 } else if ((evFlags & kPitchBoundry_Flg) != 0) {
                     _punctOffset = evAmp;
                 } else {
-                    // Phrase-position downstep
-                    // Scale factors x/64: {64,37,30,25,16} -> {1.00,0.58,0.47,0.39,0.25}
-                    static constexpr int32_t kDownstepScale[5] = { 64, 37, 30, 25, 16 };
-                    bool isAccent = (evFlags & (kPitchStress_Flg | kPitchRiseFall_Flg | kPitchRiseFall1_Flg)) != 0;
-                    if (isAccent) {
-                        int32_t idx = (_accentOrdinal < 4) ? _accentOrdinal : 4;
-                        evAmp = (evAmp * kDownstepScale[idx]) >> 6;
-                        _accentOrdinal++;
-                    }
                     FireTiltEvent(evAmp, evTiltX64, evDuration, evFlags);
                 }
             } else {
@@ -476,16 +452,6 @@ namespace SharpVox {
             }
 
             Phon_Boundry_Pitch();
-
-            // ENDDROP: additional baseline depression in the final 12 frames of long
-            // utterances (>3 words). Ramps up linearly from 0 to kEndDropMax, giving
-            // a terminal creaky-voice declination
-            if (_curFrame > _totalFrames - 13 && _wordCount > 3) {
-                if (_endDropAccum < kEndDropMax) _endDropAccum += kEndDropStep;
-            } else if (_curFrame <= _totalFrames - 13) {
-                _endDropAccum = 0;
-            }
-            baseLineOffset -= _endDropAccum;
 
             // Scale the intonation contour by pitch range.
             // Only the tilt excursion and declination baseline are intentional intonation
@@ -604,7 +570,6 @@ namespace SharpVox {
         _curPitchBufTime++;
         _timeIntoPhonTarg++;
         _timeIntoPhonCp++;
-        _curFrame++;
     }
 
 }  // namespace SharpVox
