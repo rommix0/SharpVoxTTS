@@ -346,6 +346,7 @@ namespace SharpVox {
         void PitchRaiseAndFall();
         int32_t CountVowelsTillBoundry(int64_t boundary, int32_t curIndex);
         int32_t CountStressVowelsTillBoundry(int64_t boundary, int32_t curIndex);
+        int32_t CountAnyStressVowelsTillBoundry(int64_t boundary, int32_t curIndex);
         bool AnyStressVowelsRemain(int32_t curIndex);
         static uint32_t PhonemeFeatureFlagsSafe(int16_t p);
         void CalcRampSteps();

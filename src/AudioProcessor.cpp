@@ -1612,7 +1612,14 @@ namespace SharpVox {
                         _phonCtrlBuf2[index] |= kPitchFall;
                         pState = kFinished;
                         break;
-                    } else if (CountStressVowelsTillBoundry(kTerm_End, index) == 0) {
+                    } else if ((curCtrl & kPrimOrEmphStress) != 0 &&
+                             CountStressVowelsTillBoundry(kTerm_End, index) == 0) {
+                        _phonCtrlBuf2[index] |= kPitchFall;
+                        pState = kFinished;
+                    } else if ((curCtrl & kIsStressed) != 0 &&
+                             CountStressVowelsTillBoundry(kTerm_End, index) == 0 &&
+                             CountAnyStressVowelsTillBoundry(kTerm_End, index) == 0) {
+                        // No primary stress anywhere: default nucleus is the last stressed vowel.
                         _phonCtrlBuf2[index] |= kPitchFall;
                         pState = kFinished;
                     } else if ((curCtrl & kIsStressed) != 0) {
@@ -1630,6 +1637,13 @@ namespace SharpVox {
                         savedWdIndex = wdIndex; savedFirstWord = firstWord; savedLastWord = lastWord;
                     } else if ((curCtrl & kPrimOrEmphStress) != 0 &&
                              CountStressVowelsTillBoundry(kTerm_End, index) == 0) {
+                        _phonCtrlBuf2[index] |= kPitchFall;
+                        pState = kFallen;
+                        savedWdIndex = wdIndex; savedFirstWord = firstWord; savedLastWord = lastWord;
+                    } else if ((curCtrl & kIsStressed) != 0 &&
+                             CountStressVowelsTillBoundry(kTerm_End, index) == 0 &&
+                             CountAnyStressVowelsTillBoundry(kTerm_End, index) == 0) {
+                        // No primary stress anywhere: default nucleus is the last stressed vowel.
                         _phonCtrlBuf2[index] |= kPitchFall;
                         pState = kFallen;
                         savedWdIndex = wdIndex; savedFirstWord = firstWord; savedLastWord = lastWord;
@@ -1684,6 +1698,21 @@ namespace SharpVox {
         for (int32_t i = curIndex; i < _phonBuf2InIndex; i++) {
             if (i != curIndex &&
                 (_phonCtrlBuf2[i] & kPrimOrEmphStress) != 0 &&
+                (PhonemeFeatureFlagsSafe(_phonBuf2[i]) & kVowelF) != 0) {
+                count++;
+            }
+            if ((_phonCtrlBuf2[i] & kSyllableTypeField) >= boundary) {
+                break;
+            }
+        }
+        return count;
+    }
+
+    int32_t AudioProcessor::CountAnyStressVowelsTillBoundry(int64_t boundary, int32_t curIndex) {
+        int32_t count = 0;
+        for (int32_t i = curIndex; i < _phonBuf2InIndex; i++) {
+            if (i != curIndex &&
+                (_phonCtrlBuf2[i] & kIsStressed) != 0 &&
                 (PhonemeFeatureFlagsSafe(_phonBuf2[i]) & kVowelF) != 0) {
                 count++;
             }
