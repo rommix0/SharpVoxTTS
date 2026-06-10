@@ -55,6 +55,8 @@ ARCHIVE    := libsharpvox.a
 
 TEST_SRCS := tests/DumpStages.cpp
 TEST_BIN  := tests/dump_stages
+TIMING_PROBE_SRCS := tests/MidiTimingProbe.cpp
+TIMING_PROBE_BIN  := tests/midi_timing_probe
 
 # WASM sources (same engine + speaker + wasm interop)
 WASM_SRCS := $(LIB_SRCS) \
@@ -76,14 +78,19 @@ EMCCFLAGS := -std=c++17 -O2 -Iinclude -DSHARPVOX_FIXED_POINT_SYNTH -DSHARPVOX_SA
     -sEXPORT_ES6=1 \
     -sENVIRONMENT=web
 
-.PHONY: all cli lib tests wasm wasm-host clean
+.PHONY: all cli lib tests timing-probe wasm wasm-host clean
 
 all: cli lib
 
 tests: $(TEST_BIN)
 
+timing-probe: $(TIMING_PROBE_BIN)
+
 $(TEST_BIN): $(LIB_OBJS) $(TEST_SRCS)
 	$(CXX) $(CXXFLAGS) $(TEST_SRCS) $(LIB_OBJS) $(LDLIBS) -o $@
+
+$(TIMING_PROBE_BIN): $(LIB_OBJS) platform/lib/SharpVox.o $(TIMING_PROBE_SRCS)
+	$(CXX) $(CXXFLAGS) $(TIMING_PROBE_SRCS) $(LIB_OBJS) platform/lib/SharpVox.o $(LDLIBS) -o $@
 
 cli: $(CLI_BIN)
 
@@ -123,3 +130,4 @@ clean:
 	rm -f $(LIB_OBJS:.o=.d) $(CLI_OBJS:.o=.d) $(SHLIB_OBJS:.o=.d)
 	rm -rf $(FP_BUILD_DIR)
 	rm -f $(WASM_OUT) platform/wasm/wwwroot/js/sharpvox.wasm
+	rm -f $(TIMING_PROBE_BIN)

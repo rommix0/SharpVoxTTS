@@ -188,6 +188,14 @@
     const tokens = [];
     let runNote = null, runR = null, runV = null, prevEnd = null;
 
+    if (noteEvents.length) {
+      const leadMs = ticksToMs(0, noteEvents[0].startTick, tempoMap, tpb);
+      if (leadMs > 10) {
+        const tok = pauseToken(leadMs);
+        if (tok) tokens.push(tok);
+      }
+    }
+
     for (const ev of noteEvents) {
       if (prevEnd !== null) {
         const gapMs = ticksToMs(prevEnd, ev.startTick, tempoMap, tpb);
@@ -232,7 +240,7 @@
       const channels = [];
       for (const [ch, evs] of [..._parsed.chEvents.entries()].sort(([a],[b]) => a - b)) {
         const durMs = evs.length
-          ? ticksToMs(evs[0].startTick, evs[evs.length-1].endTick, _parsed.tempoMap, _parsed.tpb)
+          ? ticksToMs(0, evs[evs.length-1].endTick, _parsed.tempoMap, _parsed.tpb)
           : 0;
         channels.push({
           id: ch,
@@ -259,7 +267,7 @@
     for (const ch of targets) {
       const evs = _parsed.chEvents.get(ch);
       if (!evs || !evs.length) continue;
-      const durMs = ticksToMs(evs[0].startTick, evs[evs.length-1].endTick, _parsed.tempoMap, _parsed.tpb);
+      const durMs = ticksToMs(0, evs[evs.length-1].endTick, _parsed.tempoMap, _parsed.tpb);
       lines.push(`# channel ${ch}${ch === 9 ? ' [drums]' : ''}  (${evs.length} notes, ~${(durMs/1000).toFixed(2)}s)`);
       lines.push(wrapTokens(channelToTokens(evs, phoneme, _parsed.tempoMap, _parsed.tpb)));
       lines.push("");
