@@ -1594,7 +1594,8 @@ namespace SharpVox {
             if ((curCtrl & kJapaneseMora) != 0) continue;
 
             if (pState == kRaised && (curCtrl & kBoundryTypeField) == kWord_Start) {
-                wdType[wdIndex] = (curCtrl & kContent_Word) != 0 ? kPitchRise1 : kPitchFall1;
+                // Function words carry no head accent (Taylor 2000: accents mark content words).
+                wdType[wdIndex] = (curCtrl & kContent_Word) != 0 ? kPitchRise1 : 0;
                 if (wdIndex < 63) {
                     wdIndex++;
                 }
@@ -1624,6 +1625,11 @@ namespace SharpVox {
                         pState = kFinished;
                     } else if ((curCtrl & kIsStressed) != 0) {
                         _phonCtrlBuf2[index] |= kPitchRise;
+                        // Primary stress implies content word (function primaries are demoted),
+                        // so the first accentable word also gets a head accent event.
+                        if ((curCtrl & kPrimOrEmphStress) != 0) {
+                            _phonCtrlBuf2[index] |= kPitchRise1;
+                        }
                         pState = kRaised;
                     }
                 } else if (pState == kRaised) {
