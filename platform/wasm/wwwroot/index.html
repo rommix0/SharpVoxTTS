@@ -163,13 +163,19 @@
                         </div>
                         <div class="controls-row">
                             <label style="font-size:0.8rem; color:var(--dim)">Phoneme:</label>
-                            <input type="text" id="midiPhoneme" value="AW" style="width:52px; background:#262626; color:var(--fg); border:1px solid var(--line); border-radius:2px; padding:4px 6px; font:inherit; font-size:0.82rem;" />
+                            <input type="text" id="midiPhoneme" value="" placeholder="auto" title="Leave empty for one vowel per channel, or type an ARPABET phoneme to force it on all channels" style="width:52px; background:#262626; color:var(--fg); border:1px solid var(--line); border-radius:2px; padding:4px 6px; font:inherit; font-size:0.82rem;" />
                             <label style="font-size:0.8rem; color:var(--dim); margin-left:10px;">Channel:</label>
                             <select id="midiChannel" style="min-width:200px;">
                                 <option value="all">All channels</option>
                             </select>
                         </div>
-                        <button class="speak-btn" onclick="ui.convertMidi()">CONVERT TO KLATTSCH</button>
+                        <button class="speak-btn" onclick="ui.renderMidi()">RENDER</button>
+                        <div class="controls-row" id="midiResults" style="display:none">
+                            <button onclick="ui.playMidiResult()">Play</button>
+                            <button onclick="ui.downloadMidiWav()">Download .wav</button>
+                            <button onclick="ui.downloadMidiTokens()">Download syntax</button>
+                            <button onclick="ui.exportMidiVideo()">Export video</button>
+                        </div>
                     </div>
                 </fieldset>
 
@@ -656,6 +662,7 @@
     <script src="js/Dec2KlattschConverter.js"></script>
     <script src="js/UstConverter.js"></script>
     <script src="js/MidiConverter.js"></script>
+    <script src="js/MidiVideo.js"></script>
     <script src="js/AudioPlayer.js"></script>
     <script src="js/ui.js"></script>
     <script type="module" src="js/main.js"></script>

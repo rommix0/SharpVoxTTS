@@ -6,6 +6,8 @@ let _pendingPlayAt = null;
 let _glotMono = null;
 let _glotSrcRate = 0;
 let _pendingCustomString = null;
+let _renderSeq = 0;
+const _pendingRenders = new Map();
 
 worker.onmessage = ({ data }) => {
     switch (data.type) {
@@ -54,6 +56,22 @@ worker.onmessage = ({ data }) => {
         case 'customString':
             if (_pendingCustomString) { _pendingCustomString(data.value); _pendingCustomString = null; }
             break;
+        case 'renderResult': {
+            const pending = _pendingRenders.get(data.requestId);
+            if (!pending) break;
+            _pendingRenders.delete(data.requestId);
+            if (data.error) {
+                pending.reject(new Error(data.error));
+            } else {
+                pending.resolve({
+                    samples: new Int16Array(data.pcm.buffer, data.pcm.byteOffset, data.pcm.byteLength >> 1),
+                    sampleRate: data.sr,
+                    codes: JSON.parse(data.codesJson),
+                    times: JSON.parse(data.timesJson),
+                });
+            }
+            break;
+        }
         case 'startVideoExport':
             window.ui?.startVideoExport(
                 data.pcm, data.sr,
@@ -76,6 +94,11 @@ window.sharpVox = {
     DownloadWav:     (text)                        => worker.postMessage({ type: 'DownloadWav', text }),
     AuditionPhoneme: (code)                        => worker.postMessage({ type: 'AuditionPhoneme', code }),
     ExportVideo:     (text)                        => worker.postMessage({ type: 'ExportVideo', text }),
+    RenderBuffer:    (text)                        => new Promise((resolve, reject) => {
+        const requestId = ++_renderSeq;
+        _pendingRenders.set(requestId, { resolve, reject });
+        worker.postMessage({ type: 'RenderBuffer', requestId, text });
+    }),
     SetGlottalSample: async (file, naturalPitchHz) => {
         const arrayBuf = await file.arrayBuffer();
         const audioCtx = new OfflineAudioContext(1, 1, 44100);

@@ -59,6 +59,19 @@ EM_JS(void, js_download_file, (const char* filename, const char* content), {
     self.postMessage({ type: 'downloadFile', filename: UTF8ToString(filename), content: UTF8ToString(content) });
 });
 
+EM_JS(void, js_render_result, (int requestId, const uint8_t* pcm, int pcmLen, int sr,
+                               const char* codesJson, const char* timesJson), {
+    const data = HEAPU8.slice(pcm, pcm + pcmLen);
+    self.postMessage({
+        type: 'renderResult', requestId: requestId, pcm: data, sr: sr,
+        codesJson: UTF8ToString(codesJson), timesJson: UTF8ToString(timesJson)
+    }, [data.buffer]);
+});
+
+EM_JS(void, js_render_error, (int requestId, const char* msg), {
+    self.postMessage({ type: 'renderResult', requestId: requestId, error: UTF8ToString(msg) });
+});
+
 EM_JS(void, js_start_video_export, (const uint8_t* pcm, int pcmLen, int sr,
                                      const char* eventsJson, const char* timesJson,
                                      const char* wordTimesJson, float duration,
@@ -423,6 +436,49 @@ public:
         } catch (const std::exception& e) {
             std::string err = std::string("error: ") + e.what();
             js_update_status(err.c_str());
+        }
+    }
+
+    // Render text to a PCM buffer off the audio path and post it back with
+    // all phoneme events (SIL included), so JS callers like the MIDI
+    // converter can mix voices and drive per-tile overlays themselves.
+    // The text is rendered as-is: callers supply their own [:klattsch on].
+    void RenderBuffer(int requestId, const std::string& text) {
+        try {
+            prepareEngine();
+            _speaker.KlattschMode = false;
+
+            std::vector<int16_t> samples;
+            _speaker.SpeakWithEvents(text,
+                [](SharpVoxSpeaker* /*speaker*/, const int16_t* buf, int32_t len, void* ud) {
+                    auto* s = static_cast<std::vector<int16_t>*>(ud);
+                    s->insert(s->end(), buf, buf + len);
+                },
+                [](SharpVoxSpeaker* /*speaker*/, const PhonemeEvent* /*events*/, int32_t /*count*/, void* /*ud*/) {},
+                &samples);
+
+            std::string codesJson = "[", timesJson = "[";
+            bool first = true;
+            for (const auto& e : _speaker.PhonemeEvents()) {
+                const char* name = e.Phoneme == AudioProcessor::_SIL_ ? "SIL" : phonemeName(e.Phoneme);
+                if (!name) { continue; }
+                if (!first) { codesJson += ','; timesJson += ','; }
+                first = false;
+                codesJson += jsonStr(name);
+                char timeBuf[32];
+                std::snprintf(timeBuf, sizeof(timeBuf), "%g", (double)e.TimeSeconds);
+                timesJson += timeBuf;
+            }
+            codesJson += ']'; timesJson += ']';
+
+            js_render_result(requestId,
+                reinterpret_cast<const uint8_t*>(samples.data()),
+                (int)(samples.size() * 2), _sampleRate,
+                codesJson.c_str(), timesJson.c_str());
+        } catch (const std::exception& e) {
+            js_render_error(requestId, e.what());
+        } catch (...) {
+            js_render_error(requestId, "render failed");
         }
     }
 
@@ -792,6 +848,7 @@ EMSCRIPTEN_BINDINGS(sharpvox_interop) {
         .function("HandleImport",    &SharpVoxInterop::HandleImport)
         .function("ConvertUst",      &SharpVoxInterop::ConvertUst)
         .function("ExportVideo",     &SharpVoxInterop::ExportVideo)
+        .function("RenderBuffer",    &SharpVoxInterop::RenderBuffer)
 #ifdef SHARPVOX_SAMPLED_GLOT
         .function("SetGlottalSample",     &SharpVoxInterop::SetGlottalSample)
         .function("ClearGlottalSample",   &SharpVoxInterop::ClearGlottalSample)

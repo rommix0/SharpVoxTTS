@@ -5,6 +5,7 @@
 *.so
 sharpvox
 tests/dump_stages
+tests/midi_timing_probe
 out.wav
 /build
 /*.sh

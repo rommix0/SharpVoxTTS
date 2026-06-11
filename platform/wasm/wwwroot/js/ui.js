@@ -151,6 +151,9 @@ window.ui = {
         const file = input.files[0];
         document.getElementById('midiFileName').innerText = file.name;
 
+        window.ui._midiResult = null;
+        document.getElementById('midiResults').style.display = 'none';
+
         const buffer = await file.arrayBuffer();
         const result = window.MidiConverter.parse(buffer);
 
@@ -168,27 +171,134 @@ window.ui = {
             opt.textContent = ch.label;
             sel.appendChild(opt);
         }
-        const firstMelody = result.channels.find(c => c.id !== 9);
-        if (firstMelody) sel.value = firstMelody.id;
-
         const summary = result.channels.map(c => `  ${c.label}`).join('\n');
         document.getElementById('toolsDiagnostics').innerText =
             `MIDI loaded — ${result.tpb} ticks/beat, ${result.channels.length} channel(s)\n${summary}`;
         window.ui.updateStatus("midi loaded — select channel and convert");
     },
 
-    convertMidi: () => {
-        const phoneme = (document.getElementById('midiPhoneme').value || 'AW').trim().toUpperCase() || 'AW';
+    _midiResult: null,
+    _midiBusy: false,
+
+    // Render the loaded MIDI directly: one engine render per monophonic
+    // voice from t=0 with exact open-loop onsets, gain-enveloped into a
+    // master mix plus per-channel buffers for the grid video export.
+    renderMidi: async () => {
+        if (window.ui._midiBusy) return;
+        const phoneme = document.getElementById('midiPhoneme').value;
         const channel = document.getElementById('midiChannel').value;
-        const klattsch = window.MidiConverter.convert(channel, phoneme);
-        if (!klattsch) {
+        const sampleRate = parseInt(document.getElementById('sampleRate')?.value) || 48000;
+
+        const job = window.MidiConverter.buildVoices(channel, phoneme, sampleRate);
+        if (!job) {
             window.ui.updateStatus("no midi file loaded");
             return;
         }
-        document.getElementById('inputText').value = klattsch;
-        document.getElementById('toolsDiagnostics').innerText = `Channel ${channel} converted`;
-        window.ui.updateStatus("conversion complete — klattsch ready");
-        window.ui.setMode('klattsch');
+
+        window.ui._midiBusy = true;
+        window.ui._midiResult = null;
+        document.getElementById('midiResults').style.display = 'none';
+        const diag = [];
+        try {
+            const mix = new Float64Array(job.masterLen);
+            const chAudio = new Map();
+            const chPhonemes = new Map();
+            for (const ch of job.channels) {
+                chAudio.set(ch, new Float32Array(job.masterLen));
+                chPhonemes.set(ch, []);
+            }
+
+            for (let i = 0; i < job.voices.length; i++) {
+                const v = job.voices[i];
+                window.ui.updateStatus(`rendering voice ${i + 1}/${job.voices.length} (${v.name})...`);
+                await window.yieldToEventLoop();
+                const res = await window.sharpVox.RenderBuffer(v.text);
+                const drift = res.samples.length - v.layout.totalSamples;
+                if (Math.abs(drift) > v.layout.unitSamples) {
+                    diag.push(`warning: ${v.name} rendered ${drift > 0 ? '+' : ''}${drift} samples vs prediction`);
+                }
+                window.MidiConverter.accumulateWithGain(
+                    res.samples, v.layout.onsetSamples, v.notes.map(n => n.gain),
+                    sampleRate, mix, chAudio.get(v.channel));
+                const evs = chPhonemes.get(v.channel);
+                for (let k = 0; k < res.codes.length; k++) {
+                    evs.push({ timeMs: res.times[k] * 1000, code: res.codes[k] });
+                }
+            }
+            for (const evs of chPhonemes.values()) evs.sort((a, b) => a.timeMs - b.timeMs);
+
+            window.ui.updateStatus("mixing...");
+            await window.yieldToEventLoop();
+            const fin = window.MidiConverter.finalizeMix(mix, sampleRate);
+
+            const fileName = document.getElementById('midiFileName').innerText
+                .replace(/\.midi?$/i, '').trim() || 'midi';
+            window.ui._midiResult = {
+                samples: fin.samples,
+                sampleRate,
+                chAudio,
+                chPhonemes,
+                durationMs: (job.masterLen / sampleRate) * 1000,
+                fileName,
+                job,
+            };
+
+            diag.push(`${job.voices.length} voice(s) across ${job.channels.length} channel(s), ` +
+                `${(job.masterLen / sampleRate).toFixed(2)}s at ${sampleRate}Hz`);
+            if (fin.upScale > 1) {
+                diag.push(`normalized up x${fin.upScale.toFixed(2)}`);
+            } else if (fin.minGain < 1) {
+                diag.push(`limiter: raw peak ${Math.round(fin.peak)}, ` +
+                    `max reduction ${(20 * Math.log10(fin.minGain)).toFixed(1)}dB, ` +
+                    `active ${(fin.limitedFraction * 100).toFixed(1)}% of time`);
+            }
+            document.getElementById('toolsDiagnostics').innerText = diag.join('\n');
+
+            document.getElementById('midiResults').style.display = 'flex';
+            window.ui.updateStatus("midi render complete");
+            window.ui.playMidiResult();
+        } catch (e) {
+            document.getElementById('toolsDiagnostics').innerText = diag.join('\n');
+            window.ui.updateStatus("midi render failed: " + e.message);
+        } finally {
+            window.ui._midiBusy = false;
+        }
+    },
+
+    playMidiResult: () => {
+        const r = window.ui._midiResult;
+        if (!r) return;
+        window.stopAudio();
+        window.initAudio(r.sampleRate);
+        window.playAudioStream(r.samples, r.sampleRate);
+    },
+
+    downloadMidiWav: () => {
+        const r = window.ui._midiResult;
+        if (!r) return;
+        const wav = window.MidiConverter.buildWav(r.samples, r.sampleRate);
+        window.downloadBytes(wav, `${r.fileName}.wav`, 'audio/wav');
+    },
+
+    downloadMidiTokens: () => {
+        const r = window.ui._midiResult;
+        if (!r) return;
+        const text = window.MidiConverter.tokensFileText(r.job, r.fileName);
+        window.downloadBytes(new TextEncoder().encode(text), `${r.fileName}_tokens.txt`, 'text/plain');
+    },
+
+    exportMidiVideo: async () => {
+        const r = window.ui._midiResult;
+        if (!r || window.ui._midiBusy) return;
+        window.ui._midiBusy = true;
+        try {
+            window.stopAudio();
+            await window.MidiVideo.exportVideo(r, window.ui.updateStatus);
+        } catch (e) {
+            window.ui.updateStatus("video export failed: " + e.message);
+        } finally {
+            window.ui._midiBusy = false;
+        }
     },
 
     convertDec: () => {

@@ -43,6 +43,9 @@ self.onmessage = ({ data }) => {
         case 'ExportVideo':
             instance.ExportVideo(data.text);
             break;
+        case 'RenderBuffer':
+            instance.RenderBuffer(data.requestId, data.text);
+            break;
         case 'SetGlottalSample':
             instance.SetGlottalSample(data.pcm, data.srcRate, data.naturalPitchHz);
             break;
