@@ -45,8 +45,7 @@ namespace SharpVox {
 
     std::vector<std::string> TtsEngine::PhonemizeWord(const std::string& word) {
         std::vector<std::string> result;
-        for (auto& pair : _fe.TextToSentenceTokens(word)) {
-            const std::vector<PhonemeToken>& tokens = pair.first;
+        _fe.TextToSentenceTokens(word, [&](const std::vector<PhonemeToken>& tokens, int16_t, bool) {
             for (const auto& tok : tokens) {
                 if (tok.Phon == _SIL_) { continue; }
                 const char* name = AudioProcessor::PhonemeNamesTable[tok.Phon];
@@ -56,7 +55,7 @@ namespace SharpVox {
                     result.push_back(nameStr);
                 }
             }
-        }
+        });
         return result;
     }
 
@@ -99,11 +98,14 @@ namespace SharpVox {
                 continue;
             } else {
                 // Just take the first sentence for now if multi-sentence
-                for (auto& p : _fe.TextToSentenceTokens(seg.plainText)) {
-                    tokens = p.first;
-                    endPunct = p.second;
-                    break;
-                }
+                bool gotFirst = false;
+                _fe.TextToSentenceTokens(seg.plainText,
+                        [&](const std::vector<PhonemeToken>& toks, int16_t ep, bool) {
+                    if (gotFirst) { return; }
+                    tokens = toks;
+                    endPunct = ep;
+                    gotFirst = true;
+                });
                 if (tokens.empty()) { continue; }
             }
 
@@ -141,13 +143,12 @@ namespace SharpVox {
                 ProcessSentenceStreamingFromPlan(plan, cb);
                 continue;
             }
-            auto sentences = _fe.TextToSentenceTokens(seg.plainText);
-            for (size_t j = 0; j < sentences.size(); j++) {
-                int16_t ep = sentences[j].second;
-                if (ep == 0 && si == lastContent && j == sentences.size() - 1)
+            _fe.TextToSentenceTokens(seg.plainText,
+                    [&](const std::vector<PhonemeToken>& tokens, int16_t ep, bool isLast) {
+                if (ep == 0 && si == lastContent && isLast)
                     ep = _Period_;
-                ProcessSentenceStreaming(sentences[j].first, ep, cb);
-            }
+                ProcessSentenceStreaming(tokens, ep, cb);
+            });
         }
     }
 
@@ -247,11 +248,9 @@ namespace SharpVox {
                 continue;
             }
 
-            auto sentences = _fe.TextToSentenceTokens(seg.plainText);
-            for (size_t j = 0; j < sentences.size(); j++) {
-                const std::vector<PhonemeToken>& tokens = sentences[j].first;
-                int16_t endPunct = sentences[j].second;
-                if (endPunct == 0 && si == lastContent && j == sentences.size() - 1)
+            _fe.TextToSentenceTokens(seg.plainText,
+                    [&](const std::vector<PhonemeToken>& tokens, int16_t endPunct, bool isLast) {
+                if (endPunct == 0 && si == lastContent && isLast)
                     endPunct = _Period_;
                 auto plan = _be.Process(tokens, endPunct);
                 int32_t frameOff = 0;
@@ -267,7 +266,7 @@ namespace SharpVox {
                 }
                 sampleOffset += frameOff * _synth.SampFrameLen;
                 workItems.push_back({std::move(plan), _voice});
-            }
+            });
         }
 
         onEventsReady(events.data(), (int32_t)events.size(), userdata);

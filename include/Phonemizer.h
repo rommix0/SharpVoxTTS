@@ -26,8 +26,11 @@ namespace SharpVox {
 
         int16_t LastEndPunct;
 
-        // Split text into sentence/clause chunks, each yielding a token array + end-punct code.
-        std::vector<std::pair<std::vector<PhonemeToken>, int16_t>> TextToSentenceTokens(const std::string& text);
+        // Split text into sentence/clause chunks, invoking sink(tokens, endPunct, isLast) per chunk.
+        // Streams with one-chunk lookahead so memory is bounded by the longest sentence,
+        // not the whole input; isLast marks the final chunk of the text.
+        void TextToSentenceTokens(const std::string& text,
+                                  const std::function<void(const std::vector<PhonemeToken>&, int16_t, bool)>& sink);
 
         // Process a pure-text span (no embedded commands) into phoneme tokens.
         std::vector<PhonemeToken> TextSegmentToPhonemes(const std::string& text);

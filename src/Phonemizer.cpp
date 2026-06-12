@@ -1230,9 +1230,19 @@ namespace SharpVox {
           _symbols(std::move(symbolsTable))
     {}
 
-    std::vector<std::pair<std::vector<PhonemeToken>, int16_t>>
-    Phonemizer::TextToSentenceTokens(const std::string& text) {
-        std::vector<std::pair<std::vector<PhonemeToken>, int16_t>> result;
+    void Phonemizer::TextToSentenceTokens(const std::string& text,
+            const std::function<void(const std::vector<PhonemeToken>&, int16_t, bool)>& sink) {
+        // One-chunk lookahead: hold the previous chunk so the final one can be flagged isLast.
+        std::vector<PhonemeToken> pending;
+        int16_t pendingPunct = 0;
+        bool havePending = false;
+        auto emit = [&](std::vector<PhonemeToken>&& tokens, int16_t endPunct) {
+            if (havePending) { sink(pending, pendingPunct, false); }
+            pending = std::move(tokens);
+            pendingPunct = endPunct;
+            havePending = true;
+        };
+
         auto segments = EmbeddedCmd::ParseSegments(text);
 
         for (const auto& seg : segments) {
@@ -1243,7 +1253,7 @@ namespace SharpVox {
             if (seg.IsSinging()) {
                 // Each singing block is its own clause  never mix with speech
                 if (!seg.singing.empty()) {
-                    result.push_back({ seg.singing, 0 });
+                    emit(std::vector<PhonemeToken>(seg.singing), 0);
                 }
                 continue;
             }
@@ -1257,24 +1267,24 @@ namespace SharpVox {
                 if (t.kind != TokKind::SentPunct && t.kind != TokKind::ClausePunct) continue;
                 std::string sentence = plain.substr(start, (t.pos + t.len) - start);
                 auto tokens = TextSegmentToPhonemes(sentence);
-                result.push_back({ tokens, LastEndPunct });
+                emit(std::move(tokens), LastEndPunct);
                 start = t.pos + t.len;
             }
             if (start < plain.size()) {
                 std::string remaining = plain.substr(start);
                 if (remaining.find_first_not_of(" \t\r\n") != std::string::npos) {
                     auto tokens = TextSegmentToPhonemes(remaining);
-                    result.push_back({ tokens, LastEndPunct });
+                    emit(std::move(tokens), LastEndPunct);
                 }
             }
         }
 
-        if (result.empty()) {
+        if (!havePending) {
             auto tokens = TextToPhonemes(text);
-            result.push_back({ tokens, LastEndPunct });
+            emit(std::move(tokens), LastEndPunct);
         }
 
-        return result;
+        sink(pending, pendingPunct, true);
     }
 
     // Process a pure-text span (no embedded commands) into phoneme tokens.
