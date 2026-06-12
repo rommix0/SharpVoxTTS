@@ -321,7 +321,7 @@ namespace SharpVox {
             tok.Phon = phon;
             tok.Ctrl = kContent_Word | kSecondaryStress | kJapaneseMora;
             if (wordStart) { tok.Ctrl |= kWord_Start; wordStart = false; }
-            tok.UserDur = (int16_t)std::max(30, 120 - consAccum);
+            tok.UserDur = (int16_t)std::max((int32_t)30, (int32_t)120 - consAccum);
             consAccum = 0;
             if (firstSecondaryIdx == (size_t)-1) firstSecondaryIdx = out.size();
             out.push_back(tok);

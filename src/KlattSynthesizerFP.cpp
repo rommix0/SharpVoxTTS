@@ -262,8 +262,8 @@ void KlattSynthesizerFP::ComputeGlotWave(int16_t vGain) {
     float Oq       = 0.30f + _openQuotient * 0.004f;
     float chorusOq = Oq + VoiceChorus * 0.0004f;
 
-    _Ne_fp       = std::max(655360,  std::min(16056320, (int32_t)roundf(Oq       * 16777216.0f)));
-    _chorusNe_fp = std::max(655360,  std::min(16056320, (int32_t)roundf(chorusOq * 16777216.0f)));
+    _Ne_fp       = std::max((int32_t)655360,  std::min((int32_t)16056320, (int32_t)roundf(Oq       * 16777216.0f)));
+    _chorusNe_fp = std::max((int32_t)655360,  std::min((int32_t)16056320, (int32_t)roundf(chorusOq * 16777216.0f)));
     _glotInvNe_f   = 1.0f / (float)_Ne_fp;
     _chorusInvNe_f = 1.0f / (float)_chorusNe_fp;
     _voiceGain_f   = (vGain > 0) ? (vGain * 288.0f) : 0.0f;
@@ -274,7 +274,7 @@ void KlattSynthesizerFP::ComputeGlotWave(int16_t vGain) {
 void KlattSynthesizerFP::SetGlottalSample(const float* pcm, int32_t length,
                                            int32_t srcRate, float naturalPitchHz) {
     float ratio = (float)_sampleRate / (float)srcRate;
-    int32_t outLen = std::max(2, (int32_t)roundf((float)length * ratio));
+    int32_t outLen = std::max((int32_t)2, (int32_t)roundf((float)length * ratio));
     _sgBuf.resize(outLen);
     float invRatio = 1.0f / ratio;
     for (int32_t i = 0; i < outLen; i++) {

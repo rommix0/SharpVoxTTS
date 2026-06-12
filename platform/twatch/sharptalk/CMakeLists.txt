@@ -14,6 +14,7 @@ idf_component_register(
         "${ROOT}/src/DictionaryReader.cpp"
         "${ROOT}/src/LibraryDataDictionary.cpp"
         "${ROOT}/src/LibraryDataSymbols.cpp"
+        "${ROOT}/src/JapaneseParser.cpp"
         "${ROOT}/src/Morphology.cpp"
         "${ROOT}/src/HeteronymResolver.cpp"
         "${ROOT}/src/TextCommands.cpp"
