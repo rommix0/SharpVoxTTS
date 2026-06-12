@@ -149,37 +149,37 @@ static const char* phonemeName(int16_t id) {
 
 static void visemeFor(int16_t ph, const char*& v1, const char*& v2) {
     v1 = ""; v2 = "";
-    if (ph == AudioProcessor::_IY_ || ph == AudioProcessor::_IH_ || ph == AudioProcessor::_AX_ || ph == AudioProcessor::_IX_) { v1 = "vrc.v_ih"; return; }
-    if (ph == AudioProcessor::_EH_ || ph == AudioProcessor::_AE_ || ph == AudioProcessor::_EY_) { v1 = "vrc.v_e"; return; }
-    if (ph == AudioProcessor::_AH_ || ph == AudioProcessor::_AA_) { v1 = "vrc.v_aa"; return; }
-    if (ph == AudioProcessor::_AO_) { v1 = "vrc.v_oh"; return; }
-    if (ph == AudioProcessor::_UH_ || ph == AudioProcessor::_UW_) { v1 = "vrc.v_ou"; return; }
-    if (ph == AudioProcessor::_ER_ || ph == AudioProcessor::_XR_ || ph == AudioProcessor::_RX_) { v1 = "vrc.v_nn"; return; }
-    if (ph == AudioProcessor::_AY_) { v1 = "vrc.v_aa"; v2 = "vrc.v_ih"; return; }
-    if (ph == AudioProcessor::_OY_) { v1 = "vrc.v_oh"; v2 = "vrc.v_ih"; return; }
-    if (ph == AudioProcessor::_AW_) { v1 = "vrc.v_aa"; v2 = "vrc.v_ou"; return; }
-    if (ph == AudioProcessor::_OW_) { v1 = "vrc.v_oh"; v2 = "vrc.v_ou"; return; }
-    if (ph == AudioProcessor::_YU_) { v1 = "vrc.v_nn"; v2 = "vrc.v_ou"; return; }
-    if (ph == AudioProcessor::_IR_) { v1 = "vrc.v_ih"; v2 = "vrc.v_nn"; return; }
-    if (ph == AudioProcessor::_AR_) { v1 = "vrc.v_aa"; v2 = "vrc.v_nn"; return; }
-    if (ph == AudioProcessor::_OR_) { v1 = "vrc.v_oh"; v2 = "vrc.v_nn"; return; }
-    if (ph == AudioProcessor::_UR_) { v1 = "vrc.v_ou"; v2 = "vrc.v_nn"; return; }
-    if (ph == AudioProcessor::_M_  || ph == AudioProcessor::_P_ || ph == AudioProcessor::_B_) { v1 = "vrc.v_pp"; return; }
-    if (ph == AudioProcessor::_F_  || ph == AudioProcessor::_V_) { v1 = "vrc.v_ff"; return; }
-    if (ph == AudioProcessor::_TH_ || ph == AudioProcessor::_DH_) { v1 = "vrc.v_th"; return; }
-    if (ph == AudioProcessor::_S_  || ph == AudioProcessor::_Z_  || ph == AudioProcessor::_T_ ||
-        ph == AudioProcessor::_D_  || ph == AudioProcessor::_DX_) { v1 = "vrc.v_dd"; return; }
-    if (ph == AudioProcessor::_SH_ || ph == AudioProcessor::_ZH_ || ph == AudioProcessor::_CH_ || ph == AudioProcessor::_JH_) { v1 = "vrc.v_ch"; return; }
-    if (ph == AudioProcessor::_N_  || ph == AudioProcessor::_NG_ || ph == AudioProcessor::_K_ ||
-        ph == AudioProcessor::_G_  || ph == AudioProcessor::_Y_  || ph == AudioProcessor::_R_ ||
-        ph == AudioProcessor::_HH_ || ph == AudioProcessor::_EN_) { v1 = "vrc.v_nn"; return; }
-    if (ph == AudioProcessor::_L_  || ph == AudioProcessor::_LX_ || ph == AudioProcessor::_EL_) { v1 = "vrc.v_dd"; return; }
-    if (ph == AudioProcessor::_W_) { v1 = "vrc.v_ou"; return; }
-    if (ph == AudioProcessor::_JP_A_) { v1 = "vrc.v_aa"; return; }
-    if (ph == AudioProcessor::_JP_I_) { v1 = "vrc.v_ih"; return; }
-    if (ph == AudioProcessor::_JP_U_) { v1 = "vrc.v_ou"; return; }
-    if (ph == AudioProcessor::_JP_E_) { v1 = "vrc.v_e";  return; }
-    if (ph == AudioProcessor::_JP_O_) { v1 = "vrc.v_oh"; return; }
+    if (ph == _IY_ || ph == _IH_ || ph == _AX_ || ph == _IX_) { v1 = "vrc.v_ih"; return; }
+    if (ph == _EH_ || ph == _AE_ || ph == _EY_) { v1 = "vrc.v_e"; return; }
+    if (ph == _AH_ || ph == _AA_) { v1 = "vrc.v_aa"; return; }
+    if (ph == _AO_) { v1 = "vrc.v_oh"; return; }
+    if (ph == _UH_ || ph == _UW_) { v1 = "vrc.v_ou"; return; }
+    if (ph == _ER_ || ph == _XR_ || ph == _RX_) { v1 = "vrc.v_nn"; return; }
+    if (ph == _AY_) { v1 = "vrc.v_aa"; v2 = "vrc.v_ih"; return; }
+    if (ph == _OY_) { v1 = "vrc.v_oh"; v2 = "vrc.v_ih"; return; }
+    if (ph == _AW_) { v1 = "vrc.v_aa"; v2 = "vrc.v_ou"; return; }
+    if (ph == _OW_) { v1 = "vrc.v_oh"; v2 = "vrc.v_ou"; return; }
+    if (ph == _YU_) { v1 = "vrc.v_nn"; v2 = "vrc.v_ou"; return; }
+    if (ph == _IR_) { v1 = "vrc.v_ih"; v2 = "vrc.v_nn"; return; }
+    if (ph == _AR_) { v1 = "vrc.v_aa"; v2 = "vrc.v_nn"; return; }
+    if (ph == _OR_) { v1 = "vrc.v_oh"; v2 = "vrc.v_nn"; return; }
+    if (ph == _UR_) { v1 = "vrc.v_ou"; v2 = "vrc.v_nn"; return; }
+    if (ph == _M_  || ph == _P_ || ph == _B_) { v1 = "vrc.v_pp"; return; }
+    if (ph == _F_  || ph == _V_) { v1 = "vrc.v_ff"; return; }
+    if (ph == _TH_ || ph == _DH_) { v1 = "vrc.v_th"; return; }
+    if (ph == _S_  || ph == _Z_  || ph == _T_ ||
+        ph == _D_  || ph == _DX_) { v1 = "vrc.v_dd"; return; }
+    if (ph == _SH_ || ph == _ZH_ || ph == _CH_ || ph == _JH_) { v1 = "vrc.v_ch"; return; }
+    if (ph == _N_  || ph == _NG_ || ph == _K_ ||
+        ph == _G_  || ph == _Y_  || ph == _R_ ||
+        ph == _HH_ || ph == _EN_) { v1 = "vrc.v_nn"; return; }
+    if (ph == _L_  || ph == _LX_ || ph == _EL_) { v1 = "vrc.v_dd"; return; }
+    if (ph == _W_) { v1 = "vrc.v_ou"; return; }
+    if (ph == _JP_A_) { v1 = "vrc.v_aa"; return; }
+    if (ph == _JP_I_) { v1 = "vrc.v_ih"; return; }
+    if (ph == _JP_U_) { v1 = "vrc.v_ou"; return; }
+    if (ph == _JP_E_) { v1 = "vrc.v_e";  return; }
+    if (ph == _JP_O_) { v1 = "vrc.v_oh"; return; }
 }
 
 //  Interop class 
@@ -401,7 +401,7 @@ public:
                 lsV1Json    += jsonStr(v1);
                 lsV2Json    += jsonStr(v2);
 
-                if (e.Phoneme == AudioProcessor::_SIL_) { continue; }
+                if (e.Phoneme == _SIL_) { continue; }
 
                 const char* name = phonemeName(e.Phoneme);
                 if (!name) { continue; }
@@ -460,7 +460,7 @@ public:
             std::string codesJson = "[", timesJson = "[";
             bool first = true;
             for (const auto& e : _speaker.PhonemeEvents()) {
-                const char* name = e.Phoneme == AudioProcessor::_SIL_ ? "SIL" : phonemeName(e.Phoneme);
+                const char* name = e.Phoneme == _SIL_ ? "SIL" : phonemeName(e.Phoneme);
                 if (!name) { continue; }
                 if (!first) { codesJson += ','; timesJson += ','; }
                 first = false;
@@ -745,7 +745,7 @@ private:
 
         for (int32_t i = 0; i < count; i++) {
             const auto& e = events[i];
-            if (e.Phoneme == AudioProcessor::_SIL_) continue;
+            if (e.Phoneme == _SIL_) continue;
             const char* name = phonemeName(e.Phoneme);
             if (!name) continue;
 

@@ -4,33 +4,33 @@
 namespace SharpVox {
 
     // Vowel shorthands: JP-specific IDs for formant table lookup
-    static const int16_t J_AA  = AudioProcessor::_JP_A_;
-    static const int16_t J_IY  = AudioProcessor::_JP_I_;
-    static const int16_t J_UH  = AudioProcessor::_JP_U_;
-    static const int16_t J_EH  = AudioProcessor::_JP_E_;
-    static const int16_t J_AO  = AudioProcessor::_JP_O_;
+    static const int16_t J_AA  = _JP_A_;
+    static const int16_t J_IY  = _JP_I_;
+    static const int16_t J_UH  = _JP_U_;
+    static const int16_t J_EH  = _JP_E_;
+    static const int16_t J_AO  = _JP_O_;
 
     // Consonant shorthands: English IDs
-    static const uint8_t J_K   = (uint8_t)AudioProcessor::_K_;
-    static const uint8_t J_G   = (uint8_t)AudioProcessor::_G_;
-    static const uint8_t J_S   = (uint8_t)AudioProcessor::_S_;
-    static const uint8_t J_Z   = (uint8_t)AudioProcessor::_Z_;
-    static const uint8_t J_SH  = (uint8_t)AudioProcessor::_SH_;
-    static const uint8_t J_JH  = (uint8_t)AudioProcessor::_JH_;
-    static const uint8_t J_T   = (uint8_t)AudioProcessor::_T_;
-    static const uint8_t J_D   = (uint8_t)AudioProcessor::_D_;
-    static const uint8_t J_CH  = (uint8_t)AudioProcessor::_CH_;
-    static const uint8_t J_N   = (uint8_t)AudioProcessor::_N_;
-    static const uint8_t J_HH  = (uint8_t)AudioProcessor::_HH_;
-    static const uint8_t J_F   = (uint8_t)AudioProcessor::_F_;
-    static const uint8_t J_B   = (uint8_t)AudioProcessor::_B_;
-    static const uint8_t J_P   = (uint8_t)AudioProcessor::_P_;
-    static const uint8_t J_M   = (uint8_t)AudioProcessor::_M_;
-    static const uint8_t J_Y   = (uint8_t)AudioProcessor::_Y_;
-    static const uint8_t J_DX  = (uint8_t)AudioProcessor::_DX_;  // alveolar tap for Japanese /r/
-    static const uint8_t J_NG  = (uint8_t)AudioProcessor::_NG_;
-    static const uint8_t J_W   = (uint8_t)AudioProcessor::_W_;
-    static const uint8_t J_V   = (uint8_t)AudioProcessor::_V_;
+    static const uint8_t J_K   = (uint8_t)_K_;
+    static const uint8_t J_G   = (uint8_t)_G_;
+    static const uint8_t J_S   = (uint8_t)_S_;
+    static const uint8_t J_Z   = (uint8_t)_Z_;
+    static const uint8_t J_SH  = (uint8_t)_SH_;
+    static const uint8_t J_JH  = (uint8_t)_JH_;
+    static const uint8_t J_T   = (uint8_t)_T_;
+    static const uint8_t J_D   = (uint8_t)_D_;
+    static const uint8_t J_CH  = (uint8_t)_CH_;
+    static const uint8_t J_N   = (uint8_t)_N_;
+    static const uint8_t J_HH  = (uint8_t)_HH_;
+    static const uint8_t J_F   = (uint8_t)_F_;
+    static const uint8_t J_B   = (uint8_t)_B_;
+    static const uint8_t J_P   = (uint8_t)_P_;
+    static const uint8_t J_M   = (uint8_t)_M_;
+    static const uint8_t J_Y   = (uint8_t)_Y_;
+    static const uint8_t J_DX  = (uint8_t)_DX_;  // alveolar tap for Japanese /r/
+    static const uint8_t J_NG  = (uint8_t)_NG_;
+    static const uint8_t J_W   = (uint8_t)_W_;
+    static const uint8_t J_V   = (uint8_t)_V_;
 
     // Sentinel values in Mora.vowel (all outside valid int16_t phoneme range when cast to uint8_t)
     static const uint8_t JP_GEMINATE   = 0xFE;
@@ -308,8 +308,8 @@ namespace SharpVox {
         auto EmitCons = [&](uint8_t phon) {
             PhonemeToken tok;
             tok.Phon = (int16_t)phon;
-            tok.Ctrl = AudioProcessor::kContent_Word | AudioProcessor::kJapaneseMora;
-            if (wordStart) { tok.Ctrl |= AudioProcessor::kWord_Start; wordStart = false; }
+            tok.Ctrl = kContent_Word | kJapaneseMora;
+            if (wordStart) { tok.Ctrl |= kWord_Start; wordStart = false; }
             int16_t d = gemClosure ? (int16_t)120 : ConsDurMs(phon);
             tok.UserDur = d;
             consAccum += d;
@@ -319,8 +319,8 @@ namespace SharpVox {
         auto EmitVowel = [&](int16_t phon) {
             PhonemeToken tok;
             tok.Phon = phon;
-            tok.Ctrl = AudioProcessor::kContent_Word | AudioProcessor::kSecondaryStress | AudioProcessor::kJapaneseMora;
-            if (wordStart) { tok.Ctrl |= AudioProcessor::kWord_Start; wordStart = false; }
+            tok.Ctrl = kContent_Word | kSecondaryStress | kJapaneseMora;
+            if (wordStart) { tok.Ctrl |= kWord_Start; wordStart = false; }
             tok.UserDur = (int16_t)std::max(30, 120 - consAccum);
             consAccum = 0;
             if (firstSecondaryIdx == (size_t)-1) firstSecondaryIdx = out.size();
@@ -417,8 +417,7 @@ namespace SharpVox {
         // Rule 3: consecutive devoiced moras are suppressed.
         // Exceptions (spirant chains): s->s/sh, f->f/h, h->f/h resist devoicing.
         {
-            using AP = AudioProcessor;
-            const int64_t kVowelBit = AP::kSecondaryStress | AP::kPrimaryStress;
+            const int64_t kVowelBit = kSecondaryStress | kPrimaryStress;
 
             auto isVoiceless = [](uint8_t c) -> bool {
                 return c == J_K || c == J_S || c == J_SH || c == J_T || c == J_CH
@@ -468,8 +467,8 @@ namespace SharpVox {
         // Promote first secondary to primary (no function-word demotion for Japanese)
         if (firstSecondaryIdx != (size_t)-1) {
             out[firstSecondaryIdx].Ctrl =
-                (out[firstSecondaryIdx].Ctrl & ~AudioProcessor::kSecondaryStress) |
-                AudioProcessor::kPrimaryStress;
+                (out[firstSecondaryIdx].Ctrl & ~kSecondaryStress) |
+                kPrimaryStress;
         }
 
         return out;
@@ -483,11 +482,11 @@ namespace SharpVox {
         if (m.vowel == JP_GEMINATE) {
             // In a singing context, small tsu is often treated as a glottal stop or silence.
             // But here we'll just return SIL to let the caller handle it.
-            res.push_back((int16_t)AudioProcessor::_SIL_);
+            res.push_back((int16_t)_SIL_);
             return res;
         }
         if (m.vowel == JP_SYLLABIC_N) {
-            res.push_back((int16_t)AudioProcessor::_N_);
+            res.push_back((int16_t)_N_);
             return res;
         }
 

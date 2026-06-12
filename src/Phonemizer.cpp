@@ -17,17 +17,17 @@
 namespace SharpVox {
 
     // Local aliases for AudioProcessor opcode constants
-    static const uint8_t OP_STRESS1   = AudioProcessor::kOpStress1;
-    static const uint8_t OP_STRESS2   = AudioProcessor::kOpStress2;
-    static const uint8_t OP_EMPHSTRESS = AudioProcessor::kOpEmphStress;
-    static const uint8_t OP_SYLL      = AudioProcessor::kOpSyll;
-    static const uint8_t OP_WORD      = AudioProcessor::kOpWord;
-    static const uint8_t OP_PREP      = AudioProcessor::kOpPrep;
-    static const uint8_t OP_VERB      = AudioProcessor::kOpVerb;
-    static const uint8_t OP_COMMA     = AudioProcessor::kOpComma;
-    static const uint8_t OP_PERIOD    = AudioProcessor::kOpPeriod;
-    static const uint8_t OP_QUEST     = AudioProcessor::kOpQuest;
-    static const uint8_t OP_EXCLAM    = AudioProcessor::kOpExclam;
+    static const uint8_t OP_STRESS1   = kOpStress1;
+    static const uint8_t OP_STRESS2   = kOpStress2;
+    static const uint8_t OP_EMPHSTRESS = kOpEmphStress;
+    static const uint8_t OP_SYLL      = kOpSyll;
+    static const uint8_t OP_WORD      = kOpWord;
+    static const uint8_t OP_PREP      = kOpPrep;
+    static const uint8_t OP_VERB      = kOpVerb;
+    static const uint8_t OP_COMMA     = kOpComma;
+    static const uint8_t OP_PERIOD    = kOpPeriod;
+    static const uint8_t OP_QUEST     = kOpQuest;
+    static const uint8_t OP_EXCLAM    = kOpExclam;
 
     // Subject pronouns: receive kPronounWord on every phoneme so the backend can
     // apply vocal-confidence emphasis (pitch accent + vowel lengthening).
@@ -1163,16 +1163,16 @@ namespace SharpVox {
             if ((unsigned char)s[pos] == 0xE3 &&
                 (unsigned char)s[pos+1] == 0x80 &&
                 (unsigned char)s[pos+2] == 0x82)
-                return AudioProcessor::_Period_;
-            return AudioProcessor::_Ellipsis_;
+                return _Period_;
+            return _Ellipsis_;
         }
         if (len == 1) {
             char c = s[pos];
-            if (c == '?') return AudioProcessor::_Quest_;
-            if (c == '!') return AudioProcessor::_Exclam_;
-            if (c == '~') return AudioProcessor::_Tilde_;
+            if (c == '?') return _Quest_;
+            if (c == '!') return _Exclam_;
+            if (c == '~') return _Tilde_;
         }
-        return AudioProcessor::_Period_;
+        return _Period_;
     }
 
     std::string Phonemizer::Normalizer::Normalize(const std::string& text) {
@@ -1225,7 +1225,7 @@ namespace SharpVox {
     Phonemizer::Phonemizer(const uint8_t* dictData, size_t dictSize,
                            std::function<const uint8_t*(const std::string&, size_t&)> symbolsTable)
         : StatDict(0), StatMorph(0), StatLts(0),
-          LastEndPunct(AudioProcessor::_Period_),
+          LastEndPunct(_Period_),
           _dict(dictData, dictSize),
           _symbols(std::move(symbolsTable))
     {}
@@ -1321,10 +1321,10 @@ namespace SharpVox {
                 tokens.insert(tokens.end(), jptoks.begin(), jptoks.end());
             } else if (t.kind == TokKind::ClausePunct) {
                 PhonemeToken tok;
-                tok.Phon = AudioProcessor::_SIL_;
-                tok.Ctrl = AudioProcessor::kTerm_Bound | ((int64_t)AudioProcessor::kBND_Pause << AudioProcessor::kSilenceTypeShift);
+                tok.Phon = _SIL_;
+                tok.Ctrl = kTerm_Bound | ((int64_t)kBND_Pause << kSilenceTypeShift);
                 tokens.push_back(tok);
-                LastEndPunct = AudioProcessor::_Comma_;
+                LastEndPunct = _Comma_;
             } else if (t.kind == TokKind::SentPunct) {
                 LastEndPunct = SentPunctToEndPunct(normalized, t.pos, t.len);
             }
@@ -1335,7 +1335,7 @@ namespace SharpVox {
 
     std::vector<PhonemeToken> Phonemizer::TextToPhonemes(const std::string& text) {
         std::vector<PhonemeToken> tokens;
-        LastEndPunct = AudioProcessor::_Period_;
+        LastEndPunct = _Period_;
 
         // Split into ordered segments (plain text spans interleaved with singing blocks)
         auto segments = EmbeddedCmd::ParseSegments(text);
@@ -1389,10 +1389,10 @@ namespace SharpVox {
                     tokens.insert(tokens.end(), jptoks.begin(), jptoks.end());
                 } else if (t.kind == TokKind::ClausePunct) {
                     PhonemeToken tok;
-                    tok.Phon = AudioProcessor::_SIL_;
-                    tok.Ctrl = AudioProcessor::kTerm_Bound | ((int64_t)AudioProcessor::kBND_Pause << AudioProcessor::kSilenceTypeShift);
+                    tok.Phon = _SIL_;
+                    tok.Ctrl = kTerm_Bound | ((int64_t)kBND_Pause << kSilenceTypeShift);
                     tokens.push_back(tok);
-                    LastEndPunct = AudioProcessor::_Comma_;
+                    LastEndPunct = _Comma_;
                 } else if (t.kind == TokKind::SentPunct) {
                     LastEndPunct = SentPunctToEndPunct(normalized, t.pos, t.len);
                 }
@@ -1565,40 +1565,40 @@ namespace SharpVox {
     void Phonemizer::AppendWordTokens(std::vector<PhonemeToken>& tokens, const std::vector<uint8_t>& stream,
                                       bool isContent, bool isPronoun) {
         int64_t pending = 0;
-        int64_t persistent = isPronoun ? AudioProcessor::kPronounWord : 0LL;
+        int64_t persistent = isPronoun ? kPronounWord : 0LL;
         size_t startIdx = tokens.size();
         bool hadPrimary = false;
 
         for (uint8_t b : stream) {
             switch (b) {
                 case OP_WORD:
-                    pending |= AudioProcessor::kWord_Start;
+                    pending |= kWord_Start;
                     if (isContent) {
-                        pending |= AudioProcessor::kContent_Word;
+                        pending |= kContent_Word;
                     }
                     break;
                 case OP_STRESS1:
                     // Function words: demote dict primary stress to secondary so they
                     // don't trigger pitch peaks in the BackEnd pitch algorithm.
                     if (isContent) {
-                        pending |= AudioProcessor::kPrimaryStress;
+                        pending |= kPrimaryStress;
                         hadPrimary = true;
                     } else {
-                        pending |= AudioProcessor::kSecondaryStress;
+                        pending |= kSecondaryStress;
                     }
                     break;
-                case OP_STRESS2: pending |= AudioProcessor::kSecondaryStress; break;
-                case OP_EMPHSTRESS: pending |= AudioProcessor::kEmphaticStress; break;
-                case OP_SYLL: pending |= AudioProcessor::kSyllable_Start; break;
-                case OP_PREP: pending |= AudioProcessor::kPrep_Start; break;
-                case OP_VERB: pending |= AudioProcessor::kVerb_Start; break;
+                case OP_STRESS2: pending |= kSecondaryStress; break;
+                case OP_EMPHSTRESS: pending |= kEmphaticStress; break;
+                case OP_SYLL: pending |= kSyllable_Start; break;
+                case OP_PREP: pending |= kPrep_Start; break;
+                case OP_VERB: pending |= kVerb_Start; break;
                 case OP_COMMA:
                 case OP_PERIOD:
                 case OP_QUEST:
                 case OP_EXCLAM: {
                     PhonemeToken tok;
                     tok.Phon = (int16_t)b;
-                    tok.Ctrl = AudioProcessor::kTerm_Bound;
+                    tok.Ctrl = kTerm_Bound;
                     tokens.push_back(tok);
                     pending = 0;
                     break;
@@ -1619,8 +1619,8 @@ namespace SharpVox {
         // algorithm has a peak to work with on words like "how".
         if (isContent && !hadPrimary) {
             for (size_t i = startIdx; i < tokens.size(); i++) {
-                if ((tokens[i].Ctrl & AudioProcessor::kSecondaryStress) != 0) {
-                    tokens[i].Ctrl = (tokens[i].Ctrl & ~AudioProcessor::kSecondaryStress) | AudioProcessor::kPrimaryStress;
+                if ((tokens[i].Ctrl & kSecondaryStress) != 0) {
+                    tokens[i].Ctrl = (tokens[i].Ctrl & ~kSecondaryStress) | kPrimaryStress;
                     break;
                 }
             }

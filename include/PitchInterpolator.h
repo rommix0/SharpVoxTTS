@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include "PhonemeDefs.h"
 #include "SynthData.h"
 #include "VoiceData.h"
 
@@ -125,36 +126,6 @@ namespace SharpVox {
         static constexpr int32_t kFrameTime = 5;
         static constexpr int32_t pct = 655;
         static constexpr int32_t k100percent = 0x10000;
-
-        // Pitch buffer event flags (must match AudioProcessor.cs)
-        static constexpr int32_t kResetDecline = 0x8;
-        static constexpr int32_t kPhraseReset = 0x10;
-        static constexpr int32_t kPitchRiseFall_Flg = 0x2;
-        static constexpr int32_t kPitchRiseFall1_Flg = 0x20;
-        static constexpr int32_t kPitchStress_Flg = 0x1;
-        static constexpr int32_t kPitchBoundry_Flg = 0x4;
-
-        // Phoneme flags
-        static constexpr uint32_t kVoicedF = (1u << 2);
-        static constexpr uint32_t kVowelF = (1u << 0);
-        static constexpr uint32_t kVowel1F = (1u << 3);
-        static constexpr uint32_t kGStopF = (1u << 20);
-        static constexpr uint32_t kStopF = (1u << 12);
-
-        // PhonCtrl field masks
-        static constexpr int64_t kSyllableTypeField = 0x0F;
-        static constexpr int64_t kWord_End = 0x0001;
-        static constexpr int64_t kPrep_End = 0x0002;
-        static constexpr int64_t kMid_Syllable_In_Word = 0x0200;
-        static constexpr int64_t kPrimOrEmphStress = 0x1400;
-
-        static constexpr int32_t _SIL_ = 23;
-        static constexpr int32_t _YU_ = 17;
-
-        static constexpr int64_t kLowVibrato = 0x10L;
-        static constexpr int64_t kSingingDuration = 0x40000000L;
-        static constexpr int64_t kSingingPhon = 0x20000000L;
-        static constexpr int64_t kSilenceDuration = 0x01000000L;
 
         static int32_t HzToPitch(int32_t hz);
 

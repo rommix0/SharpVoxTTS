@@ -21,17 +21,6 @@ public:
     static constexpr int32_t kRoundR = 3;
     static constexpr int32_t kConsonantR = 4;
 
-    // Phoneme flags
-    static constexpr uint32_t kVowelF = (1 << 0);   // 0x1
-    static constexpr uint32_t kVoicedF = (1 << 2);   // 0x4
-    static constexpr uint32_t kVowel1F = (1 << 3);   // 0x8
-    static constexpr uint32_t kSonorantF = (1 << 4);   // 0x10
-    static constexpr uint32_t kNasalF = (1 << 6);   // 0x40
-    static constexpr uint32_t kPlosiveF = (1 << 9);   // 0x200
-    static constexpr uint32_t kStopF = (1 << 12);  // 0x1000
-    static constexpr uint32_t kGStopF = (1 << 20);  // 0x100000
-    static constexpr uint32_t kAffricateF = (1 << 24);  // 0x1000000
-
     // Misc constants
     static constexpr int32_t k100pct = 0x10000;
     static constexpr int32_t UseEnvList = 0x8000;
@@ -86,7 +75,7 @@ public:
     static int16_t GetFemaleBandwidth3(int32_t id);
 
     // Packed phoneme feature flags indexed by phoneme ID.
-    // 56 entries (0-55 English); see kVowelF etc. for flag layout.
+    // 56 entries (0-55 English); see PhonemeDefs.h kVowelF etc. for flag layout.
     static constexpr int32_t PhonemeFeatureFlagsLength = 56;
     static constexpr int32_t JapanesePhonemeFeatureFlagsLength = 5;
     static const uint32_t PhonemeFeatureFlags[];

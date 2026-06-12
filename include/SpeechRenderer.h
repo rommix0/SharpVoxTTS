@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <vector>
+#include "../include/PhonemeDefs.h"
 #include "../include/SynthData.h"
 #include "../include/VoiceData.h"
 #include "../include/Tables.h"
@@ -114,28 +115,6 @@ private:
     static constexpr int32_t ReciprocalTableSize = 100;
     static constexpr int32_t kOneHalf     = 0x8000;
 
-    // Phoneme feature flags
-    static constexpr uint32_t kVowelF      = 1u << 0;  static constexpr uint32_t kConsonantF  = 1u << 1;
-    static constexpr uint32_t kVoicedF     = 1u << 2;  static constexpr uint32_t kVowel1F     = 1u << 3;
-    static constexpr uint32_t kSonorantF   = 1u << 4;  static constexpr uint32_t kSonorant1F  = 1u << 5;
-    static constexpr uint32_t kNasalF      = 1u << 6;  static constexpr uint32_t kLiqGlideF   = 1u << 7;
-    static constexpr uint32_t kSonorConsonF = 1u << 8; static constexpr uint32_t kPlosiveF    = 1u << 9;
-    static constexpr uint32_t kPlosFricF   = 1u << 10; static constexpr uint32_t kObstF       = 1u << 11;
-    static constexpr uint32_t kStopF       = 1u << 12; static constexpr uint32_t kAlveolarF   = 1u << 13;
-    static constexpr uint32_t kVelar       = 1u << 14; static constexpr uint32_t kLabialF     = 1u << 15;
-    static constexpr uint32_t kDentalF     = 1u << 16; static constexpr uint32_t kPalatalF    = 1u << 17;
-    static constexpr uint32_t kYGlideStartF = 1u << 18; static constexpr uint32_t kYGlideEndF = 1u << 19;
-    static constexpr uint32_t kGStopF      = 1u << 20; static constexpr uint32_t kFrontF      = 1u << 21;
-    static constexpr uint32_t kDiphthongF  = 1u << 22; static constexpr uint32_t kAffricateF  = 1u << 24;
-    static constexpr uint32_t kLiqGlide2F  = 1u << 25; static constexpr uint32_t kVocLiq      = 1u << 26;
-    static constexpr uint32_t kFric        = 1u << 27;
-
-    // Phoneme control field masks
-    static constexpr int32_t kPlosive_Release  = 0x4000;
-    static constexpr int32_t kPrimOrEmphStress = 0x1400;
-    static constexpr int32_t kStressField      = 0x1C00;
-    static constexpr int32_t kSyllableTypeField = 0x000F;
-
     // Voice-dependent tables and parameters
     const int16_t* _envelopeListTable        = nullptr;
     const int16_t* _locusTable               = nullptr;
@@ -152,13 +131,6 @@ private:
     uint8_t _voiceTremRate    = 0;
     int32_t _voiceOnsetHardness = 0;
     bool    _male             = false;
-
-    // Phoneme number aliases (populated in constructor from AudioProcessor constants)
-    int32_t _IY_, _ER_, _AY_, _OY_, _UW_, _YU_, _SIL_, _LX_, _EL_, _EN_;
-    int32_t _W_, _Y_, _R_, _L_, _HH_, _M_, _N_, _NG_;
-    int32_t _F_, _V_, _TH_, _DH_, _S_, _Z_, _SH_, _ZH_;
-    int32_t _P_, _B_, _T_, _D_, _K_, _G_, _CH_, _JH_;
-    int32_t _TX_, _DX_, _QX_, _DD_;
 
     // --- Internal helpers ---
 

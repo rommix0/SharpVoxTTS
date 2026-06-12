@@ -2086,7 +2086,7 @@ namespace SharpVox {
 
             int16_t  prevPhon  = i > 0 ? _phonBuf2[i - 1] : _SIL_;
             uint32_t prevFlags = Tables::GetFeatureFlags(prevPhon);
-            bool     useIX     = (cur == _T_ || cur == _D_) || ((prevFlags & kFrontF_BE) != 0);
+            bool     useIX     = (cur == _T_ || cur == _D_) || ((prevFlags & kFrontF) != 0);
             _phonBuf2[i + 1]       = useIX ? _IX_ : _AX_;
             _phonCtrlBuf2[i + 1]   = _phonCtrlBuf2[i] | kPlosive_Release;
             _durBuf[i + 1]         = 25 / kFrameTime;
@@ -2098,8 +2098,5 @@ namespace SharpVox {
             i++;
         }
     }
-
-// C++11 requires out-of-line definitions for ODR-used static constexpr members.
-constexpr int16_t AudioProcessor::_SIL_;
 
 }  // namespace SharpVox

@@ -43,27 +43,6 @@ SpeechRenderer::SpeechRenderer(const VoiceData& voice)
     // Seed tremolo state so it is active from the very first frame
     _curKlattsch[kTremDIdx] = _voiceTremDepth << 16;
     _curKlattsch[kTremRIdx] = _voiceTremRate  << 16;
-
-    // Phoneme numbers aliased from AudioProcessor for unqualified access within this file
-    _IY_ = AudioProcessor::_IY_; _ER_ = AudioProcessor::_ER_;
-    _AY_ = AudioProcessor::_AY_; _OY_ = AudioProcessor::_OY_;
-    _UW_ = AudioProcessor::_UW_; _YU_ = AudioProcessor::_YU_;
-    _SIL_ = AudioProcessor::_SIL_; _LX_ = AudioProcessor::_LX_;
-    _EL_ = AudioProcessor::_EL_; _EN_ = AudioProcessor::_EN_;
-    _W_ = AudioProcessor::_W_;   _Y_ = AudioProcessor::_Y_;
-    _R_ = AudioProcessor::_R_;   _L_ = AudioProcessor::_L_;
-    _HH_ = AudioProcessor::_HH_; _M_ = AudioProcessor::_M_;
-    _N_ = AudioProcessor::_N_;   _NG_ = AudioProcessor::_NG_;
-    _F_ = AudioProcessor::_F_;   _V_ = AudioProcessor::_V_;
-    _TH_ = AudioProcessor::_TH_; _DH_ = AudioProcessor::_DH_;
-    _S_ = AudioProcessor::_S_;   _Z_ = AudioProcessor::_Z_;
-    _SH_ = AudioProcessor::_SH_; _ZH_ = AudioProcessor::_ZH_;
-    _P_ = AudioProcessor::_P_;   _B_ = AudioProcessor::_B_;
-    _T_ = AudioProcessor::_T_;   _D_ = AudioProcessor::_D_;
-    _K_ = AudioProcessor::_K_;   _G_ = AudioProcessor::_G_;
-    _CH_ = AudioProcessor::_CH_; _JH_ = AudioProcessor::_JH_;
-    _TX_ = AudioProcessor::_TX_; _DX_ = AudioProcessor::_DX_;
-    _QX_ = AudioProcessor::_QX_; _DD_ = AudioProcessor::_DD_;
 }
 
 void SpeechRenderer::RenderStreaming(const SynthInputDump& dump, std::function<void(const Frame&)> callback) {
@@ -655,7 +634,7 @@ int16_t SpeechRenderer::GetTargetRaw(int32_t index) {
                 tv = 0;
             }
             if (cur == _HH_ && (pf & kVoicedF) != 0 && (ctrl & kPrimOrEmphStress) == 0
-                    && (ctrl & AudioProcessor::kJapaneseMora) == 0) {
+                    && (ctrl & kJapaneseMora) == 0) {
                 tv = 54;
             }
         } else if (cur == _HH_) {

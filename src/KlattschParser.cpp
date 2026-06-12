@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 
-// PhonemeToken, phoneme-ID constants (AudioProcessor::_IY_ etc.), and ctrl-flag constants
-// (AudioProcessor::kSingingPhon, AudioProcessor::kWord_Start, etc.) all come from tts_engine.h.
+// PhonemeToken, phoneme-ID constants (_IY_ etc.), and ctrl-flag constants
+// (kSingingPhon, kWord_Start, etc.) all come from tts_engine.h.
 #include "../include/TtsEngine.h"
 
 namespace SharpVox {
@@ -69,43 +69,43 @@ static bool IsStopPhoneme(const std::string& code) {
 
 const std::unordered_map<int16_t, std::string>& KlattschParser::GetPhonemeNamesTable() {
     static const std::unordered_map<int16_t, std::string> t = {
-        { AudioProcessor::_IY_, "IY" }, { AudioProcessor::_IH_, "IH" }, { AudioProcessor::_EH_, "EH" }, { AudioProcessor::_AE_, "AE" },
-        { AudioProcessor::_AA_, "AA" }, { AudioProcessor::_AO_, "AO" }, { AudioProcessor::_AH_, "AH" }, { AudioProcessor::_UH_, "UH" },
-        { AudioProcessor::_UW_, "UW" }, { AudioProcessor::_ER_, "ER" }, { AudioProcessor::_AY_, "AY" }, { AudioProcessor::_AW_, "AW" },
-        { AudioProcessor::_EY_, "EY" }, { AudioProcessor::_OW_, "OW" }, { AudioProcessor::_OY_, "OY" },
-        { AudioProcessor::_W_,  "W"  }, { AudioProcessor::_Y_,  "Y"  }, { AudioProcessor::_R_,  "R"  }, { AudioProcessor::_L_,  "L"  },
-        { AudioProcessor::_M_,  "M"  }, { AudioProcessor::_N_,  "N"  }, { AudioProcessor::_NG_, "NG" }, { AudioProcessor::_HH_, "HH" },
-        { AudioProcessor::_F_,  "F"  }, { AudioProcessor::_TH_, "TH" }, { AudioProcessor::_S_,  "S"  }, { AudioProcessor::_SH_, "SH" },
-        { AudioProcessor::_V_,  "V"  }, { AudioProcessor::_DH_, "DH" }, { AudioProcessor::_Z_,  "Z"  }, { AudioProcessor::_ZH_, "ZH" },
-        { AudioProcessor::_P_,  "P"  }, { AudioProcessor::_B_,  "B"  }, { AudioProcessor::_T_,  "T"  }, { AudioProcessor::_D_,  "D"  },
-        { AudioProcessor::_K_,  "K"  }, { AudioProcessor::_G_,  "G"  }, { AudioProcessor::_CH_, "CH" }, { AudioProcessor::_JH_, "JH" },
-        { AudioProcessor::_AX_, "AX" }, { AudioProcessor::_IX_, "IX" }, { AudioProcessor::_YU_, "YU" },
-        { AudioProcessor::_RX_, "RX" }, { AudioProcessor::_LX_, "LX" }, { AudioProcessor::_EL_, "EL" }, { AudioProcessor::_EN_, "EN" },
-        { AudioProcessor::_DX_, "DX" }, { AudioProcessor::_TX_, "TX" },
-        { AudioProcessor::_JP_A_, "JP_A" }, { AudioProcessor::_JP_I_, "JP_I" }, { AudioProcessor::_JP_U_, "JP_U" },
-        { AudioProcessor::_JP_E_, "JP_E" }, { AudioProcessor::_JP_O_, "JP_O" },
+        { _IY_, "IY" }, { _IH_, "IH" }, { _EH_, "EH" }, { _AE_, "AE" },
+        { _AA_, "AA" }, { _AO_, "AO" }, { _AH_, "AH" }, { _UH_, "UH" },
+        { _UW_, "UW" }, { _ER_, "ER" }, { _AY_, "AY" }, { _AW_, "AW" },
+        { _EY_, "EY" }, { _OW_, "OW" }, { _OY_, "OY" },
+        { _W_,  "W"  }, { _Y_,  "Y"  }, { _R_,  "R"  }, { _L_,  "L"  },
+        { _M_,  "M"  }, { _N_,  "N"  }, { _NG_, "NG" }, { _HH_, "HH" },
+        { _F_,  "F"  }, { _TH_, "TH" }, { _S_,  "S"  }, { _SH_, "SH" },
+        { _V_,  "V"  }, { _DH_, "DH" }, { _Z_,  "Z"  }, { _ZH_, "ZH" },
+        { _P_,  "P"  }, { _B_,  "B"  }, { _T_,  "T"  }, { _D_,  "D"  },
+        { _K_,  "K"  }, { _G_,  "G"  }, { _CH_, "CH" }, { _JH_, "JH" },
+        { _AX_, "AX" }, { _IX_, "IX" }, { _YU_, "YU" },
+        { _RX_, "RX" }, { _LX_, "LX" }, { _EL_, "EL" }, { _EN_, "EN" },
+        { _DX_, "DX" }, { _TX_, "TX" },
+        { _JP_A_, "JP_A" }, { _JP_I_, "JP_I" }, { _JP_U_, "JP_U" },
+        { _JP_E_, "JP_E" }, { _JP_O_, "JP_O" },
     };
     return t;
 }
 
 static int16_t LookupKlattschPhoneme(const std::string& code) {
     static constexpr struct { const char* k; int16_t v; } kTable[] = {
-        { "IY", AudioProcessor::_IY_ }, { "IH", AudioProcessor::_IH_ }, { "EH", AudioProcessor::_EH_ }, { "AE", AudioProcessor::_AE_ },
-        { "AA", AudioProcessor::_AA_ }, { "AO", AudioProcessor::_AO_ }, { "AH", AudioProcessor::_AH_ }, { "UH", AudioProcessor::_UH_ },
-        { "UW", AudioProcessor::_UW_ }, { "ER", AudioProcessor::_ER_ }, { "AY", AudioProcessor::_AY_ }, { "AW", AudioProcessor::_AW_ },
-        { "EY", AudioProcessor::_EY_ }, { "OW", AudioProcessor::_OW_ }, { "OY", AudioProcessor::_OY_ },
-        { "W", AudioProcessor::_W_ }, { "Y", AudioProcessor::_Y_ }, { "R", AudioProcessor::_R_ }, { "L", AudioProcessor::_L_ },
-        { "M", AudioProcessor::_M_ }, { "N", AudioProcessor::_N_ }, { "NG", AudioProcessor::_NG_ },
-        { "F", AudioProcessor::_F_ }, { "TH", AudioProcessor::_TH_ }, { "S", AudioProcessor::_S_ }, { "SH", AudioProcessor::_SH_ },
-        { "V", AudioProcessor::_V_ }, { "DH", AudioProcessor::_DH_ }, { "Z", AudioProcessor::_Z_ }, { "ZH", AudioProcessor::_ZH_ },
-        { "HH", AudioProcessor::_HH_ },
-        { "P", AudioProcessor::_P_ }, { "B", AudioProcessor::_B_ }, { "T", AudioProcessor::_T_ }, { "D", AudioProcessor::_D_ },
-        { "K", AudioProcessor::_K_ }, { "G", AudioProcessor::_G_ }, { "CH", AudioProcessor::_CH_ }, { "JH", AudioProcessor::_JH_ },
-        { "AX", AudioProcessor::_AX_ }, { "IX", AudioProcessor::_IX_ }, { "YU", AudioProcessor::_YU_ },
-        { "RX", AudioProcessor::_RX_ }, { "LX", AudioProcessor::_LX_ }, { "EL", AudioProcessor::_EL_ }, { "EN", AudioProcessor::_EN_ },
-        { "DX", AudioProcessor::_DX_ }, { "TX", AudioProcessor::_TX_ },
-        { "_", AudioProcessor::_SIL_ },
-        { "A", AudioProcessor::_JP_A_ }, { "I", AudioProcessor::_JP_I_ }, { "U", AudioProcessor::_JP_U_ }, { "E", AudioProcessor::_JP_E_ }, { "O", AudioProcessor::_JP_O_ },
+        { "IY", _IY_ }, { "IH", _IH_ }, { "EH", _EH_ }, { "AE", _AE_ },
+        { "AA", _AA_ }, { "AO", _AO_ }, { "AH", _AH_ }, { "UH", _UH_ },
+        { "UW", _UW_ }, { "ER", _ER_ }, { "AY", _AY_ }, { "AW", _AW_ },
+        { "EY", _EY_ }, { "OW", _OW_ }, { "OY", _OY_ },
+        { "W", _W_ }, { "Y", _Y_ }, { "R", _R_ }, { "L", _L_ },
+        { "M", _M_ }, { "N", _N_ }, { "NG", _NG_ },
+        { "F", _F_ }, { "TH", _TH_ }, { "S", _S_ }, { "SH", _SH_ },
+        { "V", _V_ }, { "DH", _DH_ }, { "Z", _Z_ }, { "ZH", _ZH_ },
+        { "HH", _HH_ },
+        { "P", _P_ }, { "B", _B_ }, { "T", _T_ }, { "D", _D_ },
+        { "K", _K_ }, { "G", _G_ }, { "CH", _CH_ }, { "JH", _JH_ },
+        { "AX", _AX_ }, { "IX", _IX_ }, { "YU", _YU_ },
+        { "RX", _RX_ }, { "LX", _LX_ }, { "EL", _EL_ }, { "EN", _EN_ },
+        { "DX", _DX_ }, { "TX", _TX_ },
+        { "_", _SIL_ },
+        { "A", _JP_A_ }, { "I", _JP_I_ }, { "U", _JP_U_ }, { "E", _JP_E_ }, { "O", _JP_O_ },
     };
     for (const auto& e : kTable)
         if (code == e.k) return e.v;
@@ -574,12 +574,12 @@ void KlattschParser::EmitPhoneme(const Token& t, float durationMs,
     float endF0   = startF0 + t.PitchDelta;
 
     // Singing flags. We treat each beat as a word for coarticulation purposes.
-    int64_t ctrl = AudioProcessor::kSingingPhon | AudioProcessor::kSingingDuration | AudioProcessor::kContent_Word;
+    int64_t ctrl = kSingingPhon | kSingingDuration | kContent_Word;
     if (isStartOfBeat && !t.Slurred) {
-        ctrl |= AudioProcessor::kWord_Start | AudioProcessor::kSyllable_Start;
+        ctrl |= kWord_Start | kSyllable_Start;
     }
     if (isEndOfBeat) {
-        ctrl |= AudioProcessor::kWord_End;
+        ctrl |= kWord_End;
     }
 
     // Positive note (IIR settle) for stable-pitch phonemes, snaps to target fast,
@@ -655,7 +655,7 @@ void KlattschParser::FlushSyllable(std::vector<Token>& syllableQueue,
 // Phonemes outside syllable groups get full beat duration (_curRate ms, x1.5 if stressed).
 // Phonemes inside ( ) groups share the beat: stops get a short burst, others split the rest.
 // Pauses and p-directives emit SIL tokens with exact millisecond durations.
-// A trailing SIL with AudioProcessor::kTerm_End is always appended so AudioProcessor sees a clean clause end.
+// A trailing SIL with kTerm_End is always appended so AudioProcessor sees a clean clause end.
 std::vector<PhonemeToken> KlattschParser::CompileToTokens(const std::vector<Token>& tokens) {
     std::vector<PhonemeToken> result;
     bool inSyllable = false;
@@ -673,8 +673,8 @@ std::vector<PhonemeToken> KlattschParser::CompileToTokens(const std::vector<Toke
         if (t.Type == "pause") {
             FlushSyllable(syllableQueue, inSyllable, result);
             PhonemeToken silTok{};
-            silTok.Phon    = AudioProcessor::_SIL_;
-            silTok.Ctrl    = AudioProcessor::kSingingPhon | AudioProcessor::kSingingDuration | AudioProcessor::kWord_End;
+            silTok.Phon    = _SIL_;
+            silTok.Ctrl    = kSingingPhon | kSingingDuration | kWord_End;
             silTok.UserDur  = static_cast<int16_t>(t.Ms);
             silTok.UserNote = static_cast<int16_t>(-_curF0);
             result.push_back(silTok);
@@ -724,8 +724,8 @@ std::vector<PhonemeToken> KlattschParser::CompileToTokens(const std::vector<Toke
                 else                 { _curEffort  = t.Value; }
             } else if (t.Key == "pause") {
                 PhonemeToken silTok{};
-                silTok.Phon    = AudioProcessor::_SIL_;
-                silTok.Ctrl    = AudioProcessor::kSingingPhon | AudioProcessor::kSingingDuration | AudioProcessor::kWord_End;
+                silTok.Phon    = _SIL_;
+                silTok.Ctrl    = kSingingPhon | kSingingDuration | kWord_End;
                 silTok.UserDur  = static_cast<int16_t>(std::abs(t.Value));
                 silTok.UserNote = static_cast<int16_t>(-_curF0);
                 result.push_back(silTok);
@@ -747,8 +747,8 @@ std::vector<PhonemeToken> KlattschParser::CompileToTokens(const std::vector<Toke
 
     // Trailing terminal silence so AudioProcessor sees a clean clause end
     PhonemeToken termSil{};
-    termSil.Phon    = AudioProcessor::_SIL_;
-    termSil.Ctrl    = AudioProcessor::kSingingPhon | AudioProcessor::kSingingDuration | AudioProcessor::kTerm_End | AudioProcessor::kWord_End;
+    termSil.Phon    = _SIL_;
+    termSil.Ctrl    = kSingingPhon | kSingingDuration | kTerm_End | kWord_End;
     termSil.UserDur  = 150;
     termSil.UserNote = static_cast<int16_t>(-_curF0);
     result.push_back(termSil);

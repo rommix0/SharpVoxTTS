@@ -1,33 +1,10 @@
 #include "LetterToSound.h"
+#include "../include/PhonemeDefs.h"
 
 #include <cctype>
 #include <cstring>
 #include <string>
 #include <vector>
-
-// Phoneme IDs (mirrors AudioProcessor constants)
-static constexpr int16_t _IY_ = 0;  static constexpr int16_t _IH_ = 1;
-static constexpr int16_t _EH_ = 2;  static constexpr int16_t _AE_ = 3;
-static constexpr int16_t _IX_ = 4;  static constexpr int16_t _AX_ = 5;
-static constexpr int16_t _ER_ = 6;  static constexpr int16_t _AH_ = 7;
-static constexpr int16_t _AA_ = 8;  static constexpr int16_t _AO_ = 9;
-static constexpr int16_t _UH_ = 10; static constexpr int16_t _UW_ = 11;
-static constexpr int16_t _EY_ = 12; static constexpr int16_t _AY_ = 13;
-static constexpr int16_t _OY_ = 14; static constexpr int16_t _AW_ = 15;
-static constexpr int16_t _OW_ = 16;
-static constexpr int16_t _M_  = 24; static constexpr int16_t _N_  = 25;
-static constexpr int16_t _NG_ = 26; static constexpr int16_t _W_  = 27;
-static constexpr int16_t _Y_  = 28; static constexpr int16_t _R_  = 29;
-static constexpr int16_t _L_  = 30;
-static constexpr int16_t _HH_ = 43;
-static constexpr int16_t _F_  = 35; static constexpr int16_t _V_  = 36;
-static constexpr int16_t _TH_ = 37; static constexpr int16_t _DH_ = 38;
-static constexpr int16_t _S_  = 39; static constexpr int16_t _Z_  = 40;
-static constexpr int16_t _SH_ = 41; static constexpr int16_t _ZH_ = 42;
-static constexpr int16_t _P_  = 44; static constexpr int16_t _B_  = 45;
-static constexpr int16_t _T_  = 46; static constexpr int16_t _D_  = 47;
-static constexpr int16_t _K_  = 48; static constexpr int16_t _G_  = 49;
-static constexpr int16_t _CH_ = 50; static constexpr int16_t _JH_ = 51;
 
 namespace SharpVox {
 

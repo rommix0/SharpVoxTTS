@@ -61,29 +61,29 @@ namespace SharpVox {
     };
 
     // LIVE
-    static const std::vector<uint8_t> LiveVerb = Ph({AudioProcessor::_L_, S1, AudioProcessor::_IH_, AudioProcessor::_V_});         // /lIv/
-    static const std::vector<uint8_t> LiveAdj  = Ph({AudioProcessor::_L_, S1, AudioProcessor::_AY_, AudioProcessor::_V_});         // /laIv/
+    static const std::vector<uint8_t> LiveVerb = Ph({_L_, S1, _IH_, _V_});         // /lIv/
+    static const std::vector<uint8_t> LiveAdj  = Ph({_L_, S1, _AY_, _V_});         // /laIv/
     // READ
-    static const std::vector<uint8_t> ReadPres = Ph({AudioProcessor::_R_, S1, AudioProcessor::_IY_, AudioProcessor::_D_});         // /ri:d/
-    static const std::vector<uint8_t> ReadPast = Ph({AudioProcessor::_R_, S1, AudioProcessor::_EH_, AudioProcessor::_D_});         // /rEd/
+    static const std::vector<uint8_t> ReadPres = Ph({_R_, S1, _IY_, _D_});         // /ri:d/
+    static const std::vector<uint8_t> ReadPast = Ph({_R_, S1, _EH_, _D_});         // /rEd/
     // LEAD
-    static const std::vector<uint8_t> LeadVerb = Ph({AudioProcessor::_L_, S1, AudioProcessor::_IY_, AudioProcessor::_D_});         // /li:d/
-    static const std::vector<uint8_t> LeadMet  = Ph({AudioProcessor::_L_, S1, AudioProcessor::_EH_, AudioProcessor::_D_});         // /lEd/
+    static const std::vector<uint8_t> LeadVerb = Ph({_L_, S1, _IY_, _D_});         // /li:d/
+    static const std::vector<uint8_t> LeadMet  = Ph({_L_, S1, _EH_, _D_});         // /lEd/
     // WIND
-    static const std::vector<uint8_t> WindNoun = Ph({AudioProcessor::_W_, S1, AudioProcessor::_IH_, AudioProcessor::_N_, AudioProcessor::_D_});    // /wInd/
-    static const std::vector<uint8_t> WindVerb = Ph({AudioProcessor::_W_, S1, AudioProcessor::_AY_, AudioProcessor::_N_, AudioProcessor::_D_});    // /waInd/
+    static const std::vector<uint8_t> WindNoun = Ph({_W_, S1, _IH_, _N_, _D_});    // /wInd/
+    static const std::vector<uint8_t> WindVerb = Ph({_W_, S1, _AY_, _N_, _D_});    // /waInd/
     // WOUND
-    static const std::vector<uint8_t> WoundInj = Ph({AudioProcessor::_W_, S1, AudioProcessor::_UW_, AudioProcessor::_N_, AudioProcessor::_D_});    // /wu:nd/ injury
-    static const std::vector<uint8_t> WoundPst = Ph({AudioProcessor::_W_, S1, AudioProcessor::_AW_, AudioProcessor::_N_, AudioProcessor::_D_});    // /waUnd/ past-of-wind
+    static const std::vector<uint8_t> WoundInj = Ph({_W_, S1, _UW_, _N_, _D_});    // /wu:nd/ injury
+    static const std::vector<uint8_t> WoundPst = Ph({_W_, S1, _AW_, _N_, _D_});    // /waUnd/ past-of-wind
     // TEAR
-    static const std::vector<uint8_t> TearRip  = Ph({AudioProcessor::_T_, S1, AudioProcessor::_EH_, AudioProcessor::_R_});         // /tEr/ rip
-    static const std::vector<uint8_t> TearEye  = Ph({AudioProcessor::_T_, S1, AudioProcessor::_IH_, AudioProcessor::_R_});         // /tIr/ cry
+    static const std::vector<uint8_t> TearRip  = Ph({_T_, S1, _EH_, _R_});         // /tEr/ rip
+    static const std::vector<uint8_t> TearEye  = Ph({_T_, S1, _IH_, _R_});         // /tIr/ cry
     // BOW
-    static const std::vector<uint8_t> BowWeap  = Ph({AudioProcessor::_B_, S1, AudioProcessor::_OW_});              // /boU/ weapon/ribbon
-    static const std::vector<uint8_t> BowGest  = Ph({AudioProcessor::_B_, S1, AudioProcessor::_AW_});              // /baU/ gesture
+    static const std::vector<uint8_t> BowWeap  = Ph({_B_, S1, _OW_});              // /boU/ weapon/ribbon
+    static const std::vector<uint8_t> BowGest  = Ph({_B_, S1, _AW_});              // /baU/ gesture
     // CLOSE
-    static const std::vector<uint8_t> CloseVrb = Ph({AudioProcessor::_K_, AudioProcessor::_L_, S1, AudioProcessor::_OW_, AudioProcessor::_Z_});    // /kloUz/ verb
-    static const std::vector<uint8_t> CloseAdj = Ph({AudioProcessor::_K_, AudioProcessor::_L_, S1, AudioProcessor::_OW_, AudioProcessor::_S_});    // /kloUs/ near
+    static const std::vector<uint8_t> CloseVrb = Ph({_K_, _L_, S1, _OW_, _Z_});    // /kloUz/ verb
+    static const std::vector<uint8_t> CloseAdj = Ph({_K_, _L_, S1, _OW_, _S_});    // /kloUs/ near
 
     static std::vector<std::pair<std::string, Entry>> BuildTable() {
         std::vector<std::pair<std::string, Entry>> t;

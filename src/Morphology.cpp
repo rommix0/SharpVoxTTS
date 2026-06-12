@@ -1,27 +1,11 @@
 #include "Morphology.h"
 #include "../include/DictionaryReader.h"
+#include "../include/PhonemeDefs.h"
 
 #include <cstring>
 #include <initializer_list>
 #include <string>
 #include <vector>
-
-// Phoneme IDs (mirrors AudioProcessor constants)
-static constexpr int16_t _IY_ = 0;
-static constexpr int16_t _IX_ = 4;  static constexpr int16_t _AX_ = 5;
-static constexpr int16_t _ER_ = 6;  static constexpr int16_t _AY_ = 13;
-static constexpr int16_t _M_  = 24; static constexpr int16_t _N_  = 25;
-static constexpr int16_t _NG_ = 26;
-static constexpr int16_t _L_  = 30; static constexpr int16_t _EL_ = 33;
-static constexpr int16_t _F_  = 35;
-static constexpr int16_t _TH_ = 37; static constexpr int16_t _S_  = 39;
-static constexpr int16_t _Z_  = 40; static constexpr int16_t _SH_ = 41;
-static constexpr int16_t _ZH_ = 42;
-static constexpr int16_t _P_  = 44; static constexpr int16_t _B_  = 45;
-static constexpr int16_t _T_  = 46; static constexpr int16_t _D_  = 47;
-static constexpr int16_t _K_  = 48;
-static constexpr int16_t _CH_ = 50; static constexpr int16_t _JH_ = 51;
-static constexpr int16_t _SIL_= 23;
 
 namespace SharpVox {
 

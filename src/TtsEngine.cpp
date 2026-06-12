@@ -48,7 +48,7 @@ namespace SharpVox {
         for (auto& pair : _fe.TextToSentenceTokens(word)) {
             const std::vector<PhonemeToken>& tokens = pair.first;
             for (const auto& tok : tokens) {
-                if (tok.Phon == AudioProcessor::_SIL_) { continue; }
+                if (tok.Phon == _SIL_) { continue; }
                 const char* name = AudioProcessor::PhonemeNamesTable[tok.Phon];
                 if (name != nullptr) {
                     std::string nameStr = name;
@@ -169,7 +169,7 @@ namespace SharpVox {
             for (size_t j = 0; j < sentences.size(); j++) {
                 int16_t ep = sentences[j].second;
                 if (ep == 0 && si == lastContent && j == sentences.size() - 1)
-                    ep = AudioProcessor::_Period_;
+                    ep = _Period_;
                 ProcessSentenceStreaming(sentences[j].first, ep, cb);
             }
         }
@@ -242,8 +242,8 @@ namespace SharpVox {
                 int32_t frameOff = 0;
                 for (int32_t i = 0; i < dump.PhonBuf2InIndex; i++) {
                     int16_t phon = dump.PhonBuf2[i];
-                    bool emitSil = phon == AudioProcessor::_SIL_ && (i == 0 || dump.PhonBuf2[i - 1] != AudioProcessor::_SIL_);
-                    if (phon != AudioProcessor::_SIL_ || emitSil) {
+                    bool emitSil = phon == _SIL_ && (i == 0 || dump.PhonBuf2[i - 1] != _SIL_);
+                    if (phon != _SIL_ || emitSil) {
                         events.emplace_back(phon,
                             (float)(sampleOffset + frameOff * _synth.SampFrameLen) / SampleRate);
                     }
@@ -259,8 +259,8 @@ namespace SharpVox {
                 int32_t frameOff = 0;
                 for (int32_t i = 0; i < dump.PhonBuf2InIndex; i++) {
                     int16_t phon = dump.PhonBuf2[i];
-                    bool emitSil = phon == AudioProcessor::_SIL_ && (i == 0 || dump.PhonBuf2[i - 1] != AudioProcessor::_SIL_);
-                    if (phon != AudioProcessor::_SIL_ || emitSil) {
+                    bool emitSil = phon == _SIL_ && (i == 0 || dump.PhonBuf2[i - 1] != _SIL_);
+                    if (phon != _SIL_ || emitSil) {
                         events.emplace_back(phon,
                             (float)(sampleOffset + frameOff * _synth.SampFrameLen) / SampleRate);
                     }
@@ -276,16 +276,16 @@ namespace SharpVox {
                 const std::vector<PhonemeToken>& tokens = sentences[j].first;
                 int16_t endPunct = sentences[j].second;
                 if (endPunct == 0 && si == lastContent && j == sentences.size() - 1)
-                    endPunct = AudioProcessor::_Period_;
+                    endPunct = _Period_;
                 auto dump = _be.Process(tokens, endPunct);
                 int32_t frameOff = 0;
                 for (int32_t i = 0; i < dump.PhonBuf2InIndex; i++) {
                     int16_t phon = dump.PhonBuf2[i];
-                    bool emitSil = phon == AudioProcessor::_SIL_ && (i == 0 || dump.PhonBuf2[i - 1] != AudioProcessor::_SIL_);
-                    if (phon != AudioProcessor::_SIL_ || emitSil) {
+                    bool emitSil = phon == _SIL_ && (i == 0 || dump.PhonBuf2[i - 1] != _SIL_);
+                    if (phon != _SIL_ || emitSil) {
                         events.emplace_back(phon,
                             (float)(sampleOffset + frameOff * _synth.SampFrameLen) / SampleRate,
-                            phon != AudioProcessor::_SIL_ && (dump.PhonCtrlBuf2[i] & AudioProcessor::kWord_Start) != 0);
+                            phon != _SIL_ && (dump.PhonCtrlBuf2[i] & kWord_Start) != 0);
                     }
                     frameOff += dump.DurBuf[i];
                 }

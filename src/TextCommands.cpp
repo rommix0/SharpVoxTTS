@@ -60,68 +60,68 @@ int32_t EmbeddedCmd::NoteNameToHz(const std::string& name) {
 // Map a lowercase phoneme name to a phoneme ID; returns -1 on failure.
 int16_t EmbeddedCmd::MapPhoneme(const std::string& p) {
     // Vowels
-    if (p == "iy") { return AudioProcessor::_IY_; }
-    if (p == "ih") { return AudioProcessor::_IH_; }
-    if (p == "eh") { return AudioProcessor::_EH_; }
-    if (p == "ae") { return AudioProcessor::_AE_; }
-    if (p == "aa") { return AudioProcessor::_AA_; }
-    if (p == "ah") { return AudioProcessor::_AH_; }
-    if (p == "ao") { return AudioProcessor::_AO_; }
-    if (p == "uh") { return AudioProcessor::_UH_; }
-    if (p == "ax") { return AudioProcessor::_AX_; }
-    if (p == "er") { return AudioProcessor::_ER_; }
-    if (p == "ey") { return AudioProcessor::_EY_; }
-    if (p == "ay") { return AudioProcessor::_AY_; }
-    if (p == "oy") { return AudioProcessor::_OY_; }
-    if (p == "aw") { return AudioProcessor::_AW_; }
-    if (p == "ow") { return AudioProcessor::_OW_; }
-    if (p == "uw") { return AudioProcessor::_UW_; }
-    if (p == "ix") { return AudioProcessor::_IX_; }
+    if (p == "iy") { return _IY_; }
+    if (p == "ih") { return _IH_; }
+    if (p == "eh") { return _EH_; }
+    if (p == "ae") { return _AE_; }
+    if (p == "aa") { return _AA_; }
+    if (p == "ah") { return _AH_; }
+    if (p == "ao") { return _AO_; }
+    if (p == "uh") { return _UH_; }
+    if (p == "ax") { return _AX_; }
+    if (p == "er") { return _ER_; }
+    if (p == "ey") { return _EY_; }
+    if (p == "ay") { return _AY_; }
+    if (p == "oy") { return _OY_; }
+    if (p == "aw") { return _AW_; }
+    if (p == "ow") { return _OW_; }
+    if (p == "uw") { return _UW_; }
+    if (p == "ix") { return _IX_; }
     // Single-char vowel shortcuts, "i"->IH, "e"->EH, "a"->AE, "o"->AO, "u"->UW
     // Allows compact notation like "KIT" instead of "KIHT".
-    if (p == "i")  { return AudioProcessor::_IH_; }
-    if (p == "e")  { return AudioProcessor::_EH_; }
-    if (p == "a")  { return AudioProcessor::_AE_; }
-    if (p == "o")  { return AudioProcessor::_AO_; }
-    if (p == "u")  { return AudioProcessor::_UW_; }
+    if (p == "i")  { return _IH_; }
+    if (p == "e")  { return _EH_; }
+    if (p == "a")  { return _AE_; }
+    if (p == "o")  { return _AO_; }
+    if (p == "u")  { return _UW_; }
     // Sonorants
-    if (p == "w")  { return AudioProcessor::_W_; }
-    if (p == "y")  { return AudioProcessor::_Y_; }
-    if (p == "r")  { return AudioProcessor::_R_; }
-    if (p == "l")  { return AudioProcessor::_L_; }
+    if (p == "w")  { return _W_; }
+    if (p == "y")  { return _Y_; }
+    if (p == "r")  { return _R_; }
+    if (p == "l")  { return _L_; }
     // Nasals
-    if (p == "m")  { return AudioProcessor::_M_; }
-    if (p == "n")  { return AudioProcessor::_N_; }
-    if (p == "ng") { return AudioProcessor::_NG_; }
+    if (p == "m")  { return _M_; }
+    if (p == "n")  { return _N_; }
+    if (p == "ng") { return _NG_; }
     // Fricatives
-    if (p == "hh") { return AudioProcessor::_HH_; }
-    if (p == "f")  { return AudioProcessor::_F_; }
-    if (p == "v")  { return AudioProcessor::_V_; }
-    if (p == "th") { return AudioProcessor::_TH_; }
-    if (p == "dh") { return AudioProcessor::_DH_; }
-    if (p == "s")  { return AudioProcessor::_S_; }
-    if (p == "z")  { return AudioProcessor::_Z_; }
-    if (p == "sh") { return AudioProcessor::_SH_; }
-    if (p == "zh") { return AudioProcessor::_ZH_; }
+    if (p == "hh") { return _HH_; }
+    if (p == "f")  { return _F_; }
+    if (p == "v")  { return _V_; }
+    if (p == "th") { return _TH_; }
+    if (p == "dh") { return _DH_; }
+    if (p == "s")  { return _S_; }
+    if (p == "z")  { return _Z_; }
+    if (p == "sh") { return _SH_; }
+    if (p == "zh") { return _ZH_; }
     // Stops
-    if (p == "p")  { return AudioProcessor::_P_; }
-    if (p == "b")  { return AudioProcessor::_B_; }
-    if (p == "t")  { return AudioProcessor::_T_; }
-    if (p == "d")  { return AudioProcessor::_D_; }
-    if (p == "dx") { return AudioProcessor::_DX_; }
-    if (p == "k")  { return AudioProcessor::_K_; }
-    if (p == "g")  { return AudioProcessor::_G_; }
+    if (p == "p")  { return _P_; }
+    if (p == "b")  { return _B_; }
+    if (p == "t")  { return _T_; }
+    if (p == "d")  { return _D_; }
+    if (p == "dx") { return _DX_; }
+    if (p == "k")  { return _K_; }
+    if (p == "g")  { return _G_; }
     // Affricates
-    if (p == "ch") { return AudioProcessor::_CH_; }
-    if (p == "jh") { return AudioProcessor::_JH_; }
+    if (p == "ch") { return _CH_; }
+    if (p == "jh") { return _JH_; }
     // Japanese vowels
-    if (p == "jp_iy") { return AudioProcessor::_JP_I_; }
-    if (p == "jp_eh") { return AudioProcessor::_JP_E_; }
-    if (p == "jp_aa") { return AudioProcessor::_JP_A_; }
-    if (p == "jp_ow") { return AudioProcessor::_JP_O_; }
-    if (p == "jp_uw") { return AudioProcessor::_JP_U_; }
+    if (p == "jp_iy") { return _JP_I_; }
+    if (p == "jp_eh") { return _JP_E_; }
+    if (p == "jp_aa") { return _JP_A_; }
+    if (p == "jp_ow") { return _JP_O_; }
+    if (p == "jp_uw") { return _JP_U_; }
     // Silence / rest
-    if (p == "_")  { return AudioProcessor::_SIL_; }
+    if (p == "_")  { return _SIL_; }
     return -1;
 }
 
@@ -284,7 +284,7 @@ std::vector<EmbeddedCmd::Segment> EmbeddedCmd::ParseSegments(const std::string& 
                         std::vector<int16_t> phons = JapaneseParser::GetPhonemes(cp);
                         // If this is a small yoon (ya/yu/yo) and the previous phoneme was JP_I,
                         // remove the JP_I to properly form the contraction (e.g. KI + YA -> KYA).
-                        if ((cp == 0x3083 || cp == 0x3085 || cp == 0x3087) && !group.empty() && group.back() == AudioProcessor::_JP_I_) {
+                        if ((cp == 0x3083 || cp == 0x3085 || cp == 0x3087) && !group.empty() && group.back() == _JP_I_) {
                             group.pop_back();
                         }
                         group.insert(group.end(), phons.begin(), phons.end());
@@ -322,7 +322,7 @@ std::vector<EmbeddedCmd::Segment> EmbeddedCmd::ParseSegments(const std::string& 
                         }
                     }
                     if (text[i] == '_') {
-                        group.push_back(AudioProcessor::_SIL_);
+                        group.push_back(_SIL_);
                         i++;
                         continue;
                     }
@@ -342,7 +342,7 @@ std::vector<EmbeddedCmd::Segment> EmbeddedCmd::ParseSegments(const std::string& 
                         std::string one;
                         one += static_cast<char>(std::tolower(static_cast<unsigned char>(text[i])));
                         int16_t op1 = MapPhoneme(one);
-                        group.push_back(op1 >= 0 ? op1 : AudioProcessor::_SIL_);
+                        group.push_back(op1 >= 0 ? op1 : _SIL_);
                         i++;
                     }
                 }
@@ -411,23 +411,23 @@ std::vector<EmbeddedCmd::Segment> EmbeddedCmd::ParseSegments(const std::string& 
                         continue;
                     }
                     int16_t p = group[gi2];
-                    int32_t m = (p == AudioProcessor::_SIL_) ? 5 : Tables::GetMinimumDuration(p);
+                    int32_t m = (p == _SIL_) ? 5 : Tables::GetMinimumDuration(p);
                     overhead += (m / 5) * 5;
                 }
                 int32_t adjustedDur = std::max((int32_t)5, (int32_t)(dur - overhead));
 
                 for (int32_t gi = 0; gi < static_cast<int32_t>(group.size()); gi++) {
-                    int64_t ctrl = AudioProcessor::kWord_Start | AudioProcessor::kContent_Word;
+                    int64_t ctrl = kWord_Start | kContent_Word;
                     if (pitch != 0) {
-                        ctrl |= AudioProcessor::kSingingPhon;
+                        ctrl |= kSingingPhon;
                     }
                     if (hasNote && gi == durIdx) {
-                        ctrl |= AudioProcessor::kSingingDuration;
+                        ctrl |= kSingingDuration;
                     }
                     if (firstPhon) {
                         firstPhon = false;
                     } else {
-                        ctrl &= ~(AudioProcessor::kWord_Start | AudioProcessor::kContent_Word);
+                        ctrl &= ~(kWord_Start | kContent_Word);
                     }
                     PhonemeToken tok{};
                     tok.Phon    = group[gi];
