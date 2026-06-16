@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SharpVox WebUI</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+    <!-- Link preview / Discord embed (Open Graph + Twitter card). -->
+    <meta name="description" content="A fast experimental Text To Speech and singing engine" />
+    <meta name="theme-color" content="#3b82f6" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SharpVox" />
+    <meta property="og:title" content="SharpVox TTS" />
+    <meta property="og:description" content="A fast experimental Text To Speech and singing engine" />
+    <meta property="og:image" content="favicon.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="SharpVox TTS" />
+    <meta name="twitter:description" content="A fast experimental Text To Speech and singing engine" />
+    <meta name="twitter:image" content="favicon.png" />
+
     <script type="importmap">
     {
       "imports": {
@@ -28,6 +42,47 @@
         .tab-btn.active { background: var(--accent); color: #000; font-weight: 700; }
         textarea { width: 100%; height: 140px; background: #0c0c0c; color: var(--fg); border: 1px solid var(--line); border-radius: 2px; padding: 8px; font-family: ui-monospace, "Cascadia Code", "Fira Mono", monospace; font-size: 0.88rem; resize: vertical; line-height: 1.55; display: block; }
         textarea:focus { outline: none; border-color: var(--accent); }
+
+        /* KLATTSCH syntax-highlight overlay: a colored backdrop sits behind a
+           transparent-text textarea so the caret stays native while tokens
+           render in color. Backdrop and textarea must share identical metrics. */
+        .editor-shell { position: relative; border: 1px solid var(--line); border-radius: 2px; background: #0c0c0c; }
+        .editor-shell:focus-within { border-color: var(--accent); }
+        .editor-shell textarea#inputText { position: relative; z-index: 1; border: none; background: transparent; border-radius: 0; caret-color: var(--accent); }
+        .editor-shell textarea#inputText:focus { border-color: transparent; }
+        .editor-backdrop {
+            display: none;
+            position: absolute; inset: 0; margin: 0; padding: 8px; z-index: 0;
+            font-family: ui-monospace, "Cascadia Code", "Fira Mono", monospace;
+            font-size: 0.88rem; line-height: 1.55;
+            white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word;
+            overflow: hidden; pointer-events: none; color: var(--fg);
+        }
+        .editor-shell.hl-on .editor-backdrop { display: block; }
+        .editor-shell.hl-on textarea#inputText { color: transparent; }
+
+        .hl-phoneme    { color: #f3f1e9; font-weight: 500; }
+        .hl-badphoneme { color: #ff5e57; text-decoration: underline wavy rgba(255,94,87,0.65); }
+        .hl-stress     { color: var(--accent); font-weight: 700; }
+        .hl-slur       { color: #7d8a96; }
+        .hl-pitch      { color: #ffb000; }
+        .hl-transient  { color: #ffd98a; }
+        .hl-directive  { color: #ff8a33; }
+        .hl-value      { color: #ffb000; }
+        .hl-d-pitch    { color: #ff8a33; }
+        .hl-v-pitch    { color: #ffb000; }
+        .hl-d-time     { color: #6fb3e8; }
+        .hl-v-time     { color: #a8d4f5; }
+        .hl-d-scale    { color: #e890c8; }
+        .hl-v-scale    { color: #f5b8e0; }
+        .hl-d-mod      { color: #6fd7a3; }
+        .hl-v-mod      { color: #b4ecd0; }
+        .hl-d-voice    { color: #d8c264; }
+        .hl-v-voice    { color: #ecd98a; }
+        .hl-pause      { color: #7d8a96; }
+        .hl-paren      { color: #c8a24a; }
+        .hl-comment    { color: #61615c; font-style: italic; }
+        .hl-unknown    { color: #ff5e57; text-decoration: underline dotted rgba(255,94,87,0.8); }
         button { background: #262626; color: var(--fg); border: 1px solid var(--line); border-radius: 2px; padding: 4px 10px; font: inherit; font-size: 0.82rem; cursor: pointer; }
         button:hover { border-color: var(--accent); color: #fff; }
         button:active { background: #1a1a1a; }
@@ -99,7 +154,10 @@
                 <button id="tab-tools" class="tab-btn" onclick="ui.setMode('tools')">Tools</button>
             </div>
 
-            <textarea id="inputText" spellcheck="false" placeholder="Enter text to speak...">Hello, my name is SharpVox.</textarea>
+            <div class="editor-shell" id="editorShell">
+                <div id="inputHighlight" class="editor-backdrop" aria-hidden="true"></div>
+                <textarea id="inputText" spellcheck="false" placeholder="Enter text to speak...">Hello, my name is SharpVox.</textarea>
+            </div>
 
             <div id="tools-panel" class="tools-only" style="display:none">
                 <fieldset>
@@ -664,6 +722,7 @@
     <script src="js/MidiConverter.js"></script>
     <script src="js/MidiVideo.js"></script>
     <script src="js/AudioPlayer.js"></script>
+    <script src="js/KlattschHighlight.js"></script>
     <script src="js/ui.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/LipsyncRenderer.js"></script>

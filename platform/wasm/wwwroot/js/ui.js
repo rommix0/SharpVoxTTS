@@ -71,6 +71,23 @@ window.ui = {
         window.sharpVox?.Speak(text);
     },
 
+    refreshHighlight: () => {
+        const shell = document.getElementById('editorShell');
+        const hl = document.getElementById('inputHighlight');
+        if (!shell || !hl || !shell.classList.contains('hl-on') || !window.KlattschHighlight) return;
+        const text = document.getElementById('inputText').value;
+        hl.replaceChildren(window.KlattschHighlight.build(text));
+        window.ui._syncHighlightScroll();
+    },
+
+    _syncHighlightScroll: () => {
+        const hl = document.getElementById('inputHighlight');
+        const ta = document.getElementById('inputText');
+        if (!hl || !ta) return;
+        hl.scrollTop = ta.scrollTop;
+        hl.scrollLeft = ta.scrollLeft;
+    },
+
     stop: () => {
         window.sharpVox?.StopBtn();
     },
@@ -89,6 +106,8 @@ window.ui = {
         document.querySelectorAll('.tools-only').forEach(el => el.style.display = tools ? 'block' : 'none');
 
         const inputTextArea = document.getElementById('inputText');
+        const editorShell = document.getElementById('editorShell');
+        if (editorShell) editorShell.style.display = tools ? 'none' : 'block';
         inputTextArea.style.display = tools ? 'none' : 'block';
 
         if (klattsch) {
@@ -96,6 +115,9 @@ window.ui = {
         } else if (tts) {
             inputTextArea.placeholder = "Enter text to speak...";
         }
+
+        if (editorShell) editorShell.classList.toggle('hl-on', klattsch);
+        window.ui.refreshHighlight();
 
         window.sharpVox?.SetMode(klattsch || tools);
     },
@@ -841,8 +863,15 @@ window.ui = {
         window.ui.setMode(mode);
         if (encoded) try {
             document.getElementById('inputText').value = await decompress(fromB64url(encoded));
+            window.ui.refreshHighlight();
         } catch (_) {}
     };
+
+    const inputEl = document.getElementById('inputText');
+    if (inputEl) {
+        inputEl.addEventListener('input', window.ui.refreshHighlight);
+        inputEl.addEventListener('scroll', window.ui._syncHighlightScroll);
+    }
 
     window.addEventListener('hashchange', fromHash);
     fromHash();
