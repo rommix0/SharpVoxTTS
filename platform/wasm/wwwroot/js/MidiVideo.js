@@ -172,7 +172,7 @@
 
     const tiles = new Map();
     for (let i = 0; i < n; i++) {
-      status(`computing spectrogram ${i + 1}/${n}...`);
+      status(`computing spectrogram ${i + 1}/${n}...`, ((i + 1) / n) * 0.3);
       await global.yieldToEventLoop();
       const ch = channels[i];
       const rgba = await renderSpectrogramTile(chAudio.get(ch), sampleRate, durationMs, cellW, cellH, lut);
@@ -267,7 +267,7 @@
     const chunks = [];
     recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
 
-    status('recording video...');
+    status('recording video...', 0.3);
 
     await new Promise((resolve, reject) => {
       recorder.onstop = () => {
@@ -296,6 +296,7 @@
         const elapsed = (performance.now() - t0) / 1000;
         const tMs = Math.min(durationMs, elapsed * 1000);
         const fillX = Math.min(cellW, Math.ceil((tMs / durationMs) * cellW));
+        status('recording video...', 0.3 + (tMs / durationMs) * 0.7);
 
         ctx.fillStyle = BG_COLOR;
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
@@ -330,7 +331,7 @@
       renderLoop();
     });
 
-    status('video export complete');
+    status('video export complete', 1);
   }
 
   global.MidiVideo = { exportVideo };

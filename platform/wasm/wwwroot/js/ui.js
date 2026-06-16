@@ -203,6 +203,44 @@ window.ui = {
     _midiResult: null,
     _midiBusy: false,
 
+    // Progress bar shared by the MIDI render and video export jobs. Pass a
+    // fraction 0..1 for determinate progress, or null/undefined for an
+    // animated indeterminate bar.
+    showProgress: (label) => {
+        const bar = document.getElementById('midiProgress');
+        if (!bar) return;
+        bar.style.display = 'block';
+        window.ui.setProgress(null, label);
+    },
+    setProgress: (frac, label) => {
+        const bar = document.getElementById('midiProgress');
+        const fill = document.getElementById('midiProgressFill');
+        const lbl = document.getElementById('midiProgressLabel');
+        if (!bar || !fill) return;
+        if (frac === null || frac === undefined || frac < 0) {
+            bar.classList.add('indeterminate');
+            fill.style.width = '35%';
+        } else {
+            bar.classList.remove('indeterminate');
+            fill.style.width = (Math.max(0, Math.min(1, frac)) * 100).toFixed(1) + '%';
+        }
+        if (lbl && label !== undefined) lbl.textContent = label || '';
+    },
+    hideProgress: () => {
+        const bar = document.getElementById('midiProgress');
+        if (bar) { bar.style.display = 'none'; bar.classList.remove('indeterminate'); }
+    },
+
+    toggleExportMenu: (e) => {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById('midiExportMenu');
+        if (menu) menu.classList.toggle('open');
+    },
+    closeExportMenu: () => {
+        const menu = document.getElementById('midiExportMenu');
+        if (menu) menu.classList.remove('open');
+    },
+
     // Render the loaded MIDI directly: one engine render per monophonic
     // voice from t=0 with exact open-loop onsets, gain-enveloped into a
     // master mix plus per-channel buffers for the grid video export.
@@ -221,6 +259,7 @@ window.ui = {
         window.ui._midiBusy = true;
         window.ui._midiResult = null;
         document.getElementById('midiResults').style.display = 'none';
+        window.ui.showProgress('preparing...');
         const diag = [];
         try {
             const mix = new Float64Array(job.masterLen);
@@ -233,7 +272,9 @@ window.ui = {
 
             for (let i = 0; i < job.voices.length; i++) {
                 const v = job.voices[i];
-                window.ui.updateStatus(`rendering voice ${i + 1}/${job.voices.length} (${v.name})...`);
+                const label = `rendering voice ${i + 1}/${job.voices.length} (${v.name})...`;
+                window.ui.updateStatus(label);
+                window.ui.setProgress(i / job.voices.length, label);
                 await window.yieldToEventLoop();
                 const res = await window.sharpVox.RenderBuffer(v.text);
                 const drift = res.samples.length - v.layout.totalSamples;
@@ -251,6 +292,7 @@ window.ui = {
             for (const evs of chPhonemes.values()) evs.sort((a, b) => a.timeMs - b.timeMs);
 
             window.ui.updateStatus("mixing...");
+            window.ui.setProgress(null, "mixing...");
             await window.yieldToEventLoop();
             const fin = window.MidiConverter.finalizeMix(mix, sampleRate);
 
@@ -285,6 +327,7 @@ window.ui = {
             window.ui.updateStatus("midi render failed: " + e.message);
         } finally {
             window.ui._midiBusy = false;
+            window.ui.hideProgress();
         }
     },
 
@@ -314,13 +357,19 @@ window.ui = {
         const r = window.ui._midiResult;
         if (!r || window.ui._midiBusy) return;
         window.ui._midiBusy = true;
+        window.ui.showProgress('exporting video...');
+        const onStatus = (label, frac) => {
+            window.ui.updateStatus(label);
+            window.ui.setProgress(frac === undefined ? null : frac, label);
+        };
         try {
             window.stopAudio();
-            await window.MidiVideo.exportVideo(r, window.ui.updateStatus);
+            await window.MidiVideo.exportVideo(r, onStatus);
         } catch (e) {
             window.ui.updateStatus("video export failed: " + e.message);
         } finally {
             window.ui._midiBusy = false;
+            window.ui.hideProgress();
         }
     },
 
@@ -872,6 +921,16 @@ window.ui = {
         inputEl.addEventListener('input', window.ui.refreshHighlight);
         inputEl.addEventListener('scroll', window.ui._syncHighlightScroll);
     }
+
+    // Close the export popup when clicking anywhere outside its wrapper.
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.export-wrap')) window.ui.closeExportMenu();
+    });
+
+    // Collapse/expand a right-panel section by clicking its legend.
+    document.querySelectorAll('.right fieldset > legend').forEach((lg) => {
+        lg.addEventListener('click', () => lg.parentElement.classList.toggle('collapsed'));
+    });
 
     window.addEventListener('hashchange', fromHash);
     fromHash();
