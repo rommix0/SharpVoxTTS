@@ -1,6 +1,11 @@
 #ifndef SHARPVOX_KLATT_SYNTHESIZER_H
 #define SHARPVOX_KLATT_SYNTHESIZER_H
 
+// Windows builds lack M_PI
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #include <cstdint>
 #include <cmath>
 #include <algorithm>

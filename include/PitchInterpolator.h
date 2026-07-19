@@ -7,6 +7,11 @@
 #include "SynthData.h"
 #include "VoiceData.h"
 
+// windows builds lack M_PI
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace SharpVox {
 
     // Generates F0 values via Taylor (2000) Tilt model for speech or portamento for singing.
