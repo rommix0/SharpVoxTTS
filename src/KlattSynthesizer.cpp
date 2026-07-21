@@ -62,8 +62,11 @@ namespace SharpVox {
         _f1A = _f1B = _f1C = 0.0f;
         _f2A = _f2B = _f2C = 0.0f;
         _f3A = _f3B = _f3C = 0.0f;
-        _f4A = _f4B = _f4C = 0.0f;
-        _f5cA = _f5cB = _f5cC = 0.0f;
+        _f4B = _f4C = 0.0f;
+        _f5cB = _f5cC = 0.0f;
+        _f1b0 = _f2b0 = _f3b0 = 1.0f;
+        _f1b1 = _f2b1 = _f3b1 = 0.0f;
+        _f4b0 = _f4b1 = _f5cb0 = _f5cb1 = 0.0f;
         _f4pA = _f4pB = _f4pC = 0.0f;
         _f5pA = _f5pB = _f5pC = 0.0f;
         _f6pA = _f6pB = _f6pC = 0.0f;
@@ -75,6 +78,7 @@ namespace SharpVox {
         _f3D1 = _f3D2 = 0.0f;
         _f4D1 = _f4D2 = 0.0f;
         _f5cD1 = _f5cD2 = 0.0f;
+        _f1X1 = _f2X1 = _f3X1 = _f4X1 = _f5cX1 = 0.0f;
         _f2pD1 = _f2pD2 = 0.0f;
         _f3pD1 = _f3pD2 = 0.0f;
         _f4pD1 = _f4pD2 = 0.0f;
@@ -182,8 +186,8 @@ namespace SharpVox {
     }
 
     void KlattSynthesizer::InitFixedFormants() {
-        Calc_Pole_Coefficients(_f4A, _f4B, _f4C, _f4cFreq, _f4cBW);
-        Calc_Pole_Coefficients(_f5cA, _f5cB, _f5cC, _f5cFreq, _f5cBW);
+        Calc_Matched_Pole_Coefficients(_f4b0, _f4b1, _f4B, _f4C, _f4cFreq, _f4cBW);
+        Calc_Matched_Pole_Coefficients(_f5cb0, _f5cb1, _f5cB, _f5cC, _f5cFreq, _f5cBW);
 
         // Near-Nyquist fade for fixed parallel bank formants.
         // Above 0.85Nyquist the formant is already clamped to the wrong frequency;
@@ -317,12 +321,17 @@ namespace SharpVox {
 
             _sgD1 = _sgD2 = 0;
             _f1D1 = _f1D2 = _f2D1 = _f2D2 = _f3D1 = _f3D2 = _f4D1 = _f4D2 = _f5cD1 = _f5cD2 = 0;
+            _f1X1 = _f2X1 = _f3X1 = _f4X1 = _f5cX1 = 0;
             _npD1 = _npD2 = _nzD1 = _nzD2 = 0;
 
             // Initialize coefficients to targets to avoid slides from old values.
-            Calc_Pole_Coefficients(_f1A, _f1B, _f1C, AdjFormant((int16_t)(frame.F1 + _f1FreqOffset), 1), frame.Bw1);
-            Calc_Pole_Coefficients(_f2A, _f2B, _f2C, AdjFormant((int16_t)(frame.F2 + _f2FreqOffset), 2), frame.Bw2);
-            Calc_Pole_Coefficients(_f3A, _f3B, _f3C, AdjFormant((int16_t)(frame.F3 + _f3FreqOffset), 3), frame.Bw3);
+            // A keeps the all-pole gain for the parallel bank (F2p/F3p reuse it).
+            Calc_Matched_Pole_Coefficients(_f1b0, _f1b1, _f1B, _f1C, AdjFormant((int16_t)(frame.F1 + _f1FreqOffset), 1), frame.Bw1);
+            _f1A = 1.0f - _f1B - _f1C;
+            Calc_Matched_Pole_Coefficients(_f2b0, _f2b1, _f2B, _f2C, AdjFormant((int16_t)(frame.F2 + _f2FreqOffset), 2), frame.Bw2);
+            _f2A = 1.0f - _f2B - _f2C;
+            Calc_Matched_Pole_Coefficients(_f3b0, _f3b1, _f3B, _f3C, AdjFormant((int16_t)(frame.F3 + _f3FreqOffset), 3), frame.Bw3);
+            _f3A = 1.0f - _f3B - _f3C;
 
             if (frame.FNZ != _nasalPoleFreq) {
                 Calc_Zero_Coefficients(_nzA, _nzB, _nzC, (int16_t)(frame.FNZ + _nasalFreqOffset), _nasalPoleBW);
@@ -339,12 +348,16 @@ namespace SharpVox {
         }
 
         // Compute target resonator coefficients for F1-F3 and the nasal zero (NZ).
-        float f1TA, f1TB, f1TC;
-        float f2TA, f2TB, f2TC;
-        float f3TA, f3TB, f3TC;
-        Calc_Pole_Coefficients(f1TA, f1TB, f1TC, AdjFormant((int16_t)(frame.F1 + _f1FreqOffset), 1), frame.Bw1);
-        Calc_Pole_Coefficients(f2TA, f2TB, f2TC, AdjFormant((int16_t)(frame.F2 + _f2FreqOffset), 2), frame.Bw2);
-        Calc_Pole_Coefficients(f3TA, f3TB, f3TC, AdjFormant((int16_t)(frame.F3 + _f3FreqOffset), 3), frame.Bw3);
+        float f1TB, f1TC, f1T_b0, f1T_b1;
+        float f2TB, f2TC, f2T_b0, f2T_b1;
+        float f3TB, f3TC, f3T_b0, f3T_b1;
+        Calc_Matched_Pole_Coefficients(f1T_b0, f1T_b1, f1TB, f1TC, AdjFormant((int16_t)(frame.F1 + _f1FreqOffset), 1), frame.Bw1);
+        Calc_Matched_Pole_Coefficients(f2T_b0, f2T_b1, f2TB, f2TC, AdjFormant((int16_t)(frame.F2 + _f2FreqOffset), 2), frame.Bw2);
+        Calc_Matched_Pole_Coefficients(f3T_b0, f3T_b1, f3TB, f3TC, AdjFormant((int16_t)(frame.F3 + _f3FreqOffset), 3), frame.Bw3);
+        // All-pole gains still target the parallel bank (F2p/F3p reuse _f2A/_f3A).
+        float f1TA = 1.0f - f1TB - f1TC;
+        float f2TA = 1.0f - f2TB - f2TC;
+        float f3TA = 1.0f - f3TB - f3TC;
 
         float nzTA, nzTB, nzTC, targetNasalNorm;
         if (frame.FNZ != _nasalPoleFreq) {
@@ -375,6 +388,12 @@ namespace SharpVox {
         float df3A = (f3TA - _f3A) / SampFrameLen;
         float df3B = (f3TB - _f3B) / SampFrameLen;
         float df3C = (f3TC - _f3C) / SampFrameLen;
+        float df1b0 = (f1T_b0 - _f1b0) / SampFrameLen;
+        float df1b1 = (f1T_b1 - _f1b1) / SampFrameLen;
+        float df2b0 = (f2T_b0 - _f2b0) / SampFrameLen;
+        float df2b1 = (f2T_b1 - _f2b1) / SampFrameLen;
+        float df3b0 = (f3T_b0 - _f3b0) / SampFrameLen;
+        float df3b1 = (f3T_b1 - _f3b1) / SampFrameLen;
         float dNzA = (nzTA - _nzA) / SampFrameLen;
         float dNzB = (nzTB - _nzB) / SampFrameLen;
         float dNzC = (nzTC - _nzC) / SampFrameLen;
@@ -420,6 +439,9 @@ namespace SharpVox {
             _f1A += df1A; _f1B += df1B; _f1C += df1C;
             _f2A += df2A; _f2B += df2B; _f2C += df2C;
             _f3A += df3A; _f3B += df3B; _f3C += df3C;
+            _f1b0 += df1b0; _f1b1 += df1b1;
+            _f2b0 += df2b0; _f2b1 += df2b1;
+            _f3b0 += df3b0; _f3b1 += df3b1;
             _nzA += dNzA; _nzB += dNzB; _nzC += dNzC;
             _nasalNorm += dNasalNorm;
 
@@ -593,17 +615,22 @@ namespace SharpVox {
                     _npD2 = _npD1; _npD1 = cascadeOut;
 
                     // Cascade resonators F1 through F5 (F4+F5 are fixed voice-tract resonances).
-                    // Each stage is a second-order IIR: output = A*input + B*y[n-1] + C*y[n-2].
-                    cascadeOut = (_f1A * cascadeOut) + (_f1B * _f1D1) + (_f1C * _f1D2);
-                    _f1D2 = _f1D1; _f1D1 = cascadeOut;
-                    cascadeOut = (_f2A * cascadeOut) + (_f2B * _f2D1) + (_f2C * _f2D2);
-                    _f2D2 = _f2D1; _f2D1 = cascadeOut;
-                    cascadeOut = (_f3A * cascadeOut) + (_f3B * _f3D1) + (_f3C * _f3D2);
-                    _f3D2 = _f3D1; _f3D1 = cascadeOut;
-                    cascadeOut = (_f4A * cascadeOut) + (_f4B * _f4D1) + (_f4C * _f4D2);
-                    _f4D2 = _f4D1; _f4D1 = cascadeOut;
-                    cascadeOut = (_f5cA * cascadeOut) + (_f5cB * _f5cD1) + (_f5cC * _f5cD2);
-                    _f5cD2 = _f5cD1; _f5cD1 = cascadeOut;
+                    // Matched one-zero stages (Vicanek 2016): out = b0*x + b1*x[n-1] + B*y[n-1] + C*y[n-2].
+                    float x = cascadeOut;
+                    cascadeOut = (_f1b0 * x) + (_f1b1 * _f1X1) + (_f1B * _f1D1) + (_f1C * _f1D2);
+                    _f1X1 = x; _f1D2 = _f1D1; _f1D1 = cascadeOut;
+                    x = cascadeOut;
+                    cascadeOut = (_f2b0 * x) + (_f2b1 * _f2X1) + (_f2B * _f2D1) + (_f2C * _f2D2);
+                    _f2X1 = x; _f2D2 = _f2D1; _f2D1 = cascadeOut;
+                    x = cascadeOut;
+                    cascadeOut = (_f3b0 * x) + (_f3b1 * _f3X1) + (_f3B * _f3D1) + (_f3C * _f3D2);
+                    _f3X1 = x; _f3D2 = _f3D1; _f3D1 = cascadeOut;
+                    x = cascadeOut;
+                    cascadeOut = (_f4b0 * x) + (_f4b1 * _f4X1) + (_f4B * _f4D1) + (_f4C * _f4D2);
+                    _f4X1 = x; _f4D2 = _f4D1; _f4D1 = cascadeOut;
+                    x = cascadeOut;
+                    cascadeOut = (_f5cb0 * x) + (_f5cb1 * _f5cX1) + (_f5cB * _f5cD1) + (_f5cC * _f5cD2);
+                    _f5cX1 = x; _f5cD2 = _f5cD1; _f5cD1 = cascadeOut;
                 }
 
                 // Parallel formant bank (Klatt 1980 Table II) for independent aspiration/fricative noise modeling.
@@ -684,6 +711,59 @@ namespace SharpVox {
         Ccoeff = -(r * r);
         Bcoeff = 2.0f * r * (float)std::cos(w);
         Acoeff = 1.0f - Bcoeff - Ccoeff;
+    }
+
+    // Matched one-zero resonator (Vicanek 2016, "Matched Second Order Digital
+    // Filters", sec 4.1): same impulse-invariant poles as Calc_Pole_Coefficients,
+    // but numerator b0+b1*z^-1 fitted so |H| matches the analog resonance
+    // prototype H(s)=w0^2/(w0^2+s*w0/Q+s^2) with f0=sqrt(F^2+(BW/2)^2), Q=f0/BW.
+    void KlattSynthesizer::Calc_Matched_Pole_Coefficients(float& b0, float& b1,
+                                                           float& Bcoeff, float& Ccoeff,
+                                                           int16_t pitch, int16_t bandWidth,
+                                                           int32_t voiceMinBW) {
+        if (bandWidth > KMaxBandWidth) {
+            bandWidth = (int16_t)KMaxBandWidth;
+        }
+        if (bandWidth < voiceMinBW) {
+            bandWidth = (int16_t)voiceMinBW;
+        }
+        if (pitch < 256) {
+            pitch = 256;
+        }
+
+        double hz = (double)PitchToHz(pitch);
+        double nyquist = _internalRate * 0.5;
+        if (hz >= nyquist * 0.85) {
+            hz = nyquist * 0.80;
+            bandWidth = std::max(bandWidth, (int16_t)2000);
+        }
+        double bw = bandWidth, fs = _internalRate;
+        // Poles: identical values to Calc_Pole_Coefficients (Klatt sign convention).
+        double a1 = -2.0 * std::exp(-M_PI * bw / fs) * std::cos(2.0 * M_PI * hz / fs);
+        double a2 = std::exp(-2.0 * M_PI * bw / fs);
+        Bcoeff = (float)(-a1);
+        Ccoeff = (float)(-a2);
+
+        double f0 = std::sqrt(hz * hz + 0.25 * bw * bw);
+        double Q  = f0 / bw;
+        double w0 = 2.0 * M_PI * f0 / fs;
+        // Vicanek eq. 26-27, 31-34. Double precision required for the B1 cancellation.
+        double p1 = std::sin(0.5 * w0); p1 *= p1;
+        double p0 = 1.0 - p1;
+        double A0 = 1.0 + a1 + a2; A0 *= A0;
+        double A1 = 1.0 - a1 + a2; A1 *= A1;
+        double A2 = -4.0 * a2;
+        double R1 = (A0 * p0 + A1 * p1 + A2 * 4.0 * p0 * p1) * Q * Q;
+        double B1 = (R1 - A0 * p0) / p1;
+        double sB0 = 1.0 + a1 + a2;
+        if (B1 <= 0.0) {
+            // Degenerate fit: fall back to the all-pole unity-DC numerator.
+            b0 = (float)sB0;
+            b1 = 0.0f;
+            return;
+        }
+        b0 = (float)(0.5 * (sB0 + std::sqrt(B1)));
+        b1 = (float)(sB0 - b0);
     }
 
     // Antiresonator (Klatt 1980): sign-inverted pole coefficients produce a spectral zero.

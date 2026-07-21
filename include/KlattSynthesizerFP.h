@@ -99,6 +99,11 @@ namespace SharpVox {
         void Calc_Zero_Coefficients(float& Acoeff, float& Bcoeff, float& Ccoeff,
                                     int16_t pitch, int16_t bandWidth);
 
+        void Calc_Matched_Pole_Coefficients(float& b0, float& b1,
+                                            float& Bcoeff, float& Ccoeff,
+                                            int16_t pitch, int16_t bandWidth,
+                                            int32_t voiceMinBW = 50);
+
         static std::vector<int32_t> SupportedSampleRates();
 
     private:
@@ -118,8 +123,12 @@ namespace SharpVox {
         float _f1r, _f1cosw;
         float _f2r, _f2cosw;
         float _f3r, _f3cosw;
-        int32_t _f4A,  _f4B,  _f4C;
-        int32_t _f5cA, _f5cB, _f5cC;
+        // Cascade matched one-zero numerators (Vicanek 2016), interpolated per-sample
+        // for F1-F3; poles stay the classic Klatt impulse-invariant pair.
+        float _f1b0, _f1b1, _f2b0, _f2b1, _f3b0, _f3b1;
+        // Cascade F4/F5: float matched coefficients, fixed at SetVoice.
+        float _f4b0,  _f4b1,  _f4B,  _f4C;
+        float _f5cb0, _f5cb1, _f5cB, _f5cC;
         int32_t _f4pA, _f4pB, _f4pC;
         int32_t _f5pA, _f5pB, _f5pC;
         int32_t _f6pA, _f6pB, _f6pC;
@@ -133,6 +142,8 @@ namespace SharpVox {
         float   _f3D1,  _f3D2;
         float   _f4D1,  _f4D2;
         float   _f5cD1, _f5cD2;
+        // Cascade input taps x[n-1] for the matched one-zero numerators.
+        float   _f1X1, _f2X1, _f3X1, _f4X1, _f5cX1;
         float   _nzD1,  _nzD2;
         float   _npD1,  _npD2;
         float   _sgD1,  _sgD2;

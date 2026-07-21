@@ -74,6 +74,17 @@ static inline float fp_iir_ff(float A, float B, float C,
     return y;
 }
 
+// Matched one-zero resonator step (Vicanek 2016): numerator b0 + b1*z^-1
+// over the classic Klatt pole pair. x1 holds the previous input sample.
+static inline float fp_iir_zff(float b0, float b1, float B, float C,
+                                 float x, float& x1, float& d1, float& d2) {
+    float y = b0 * x + b1 * x1 + B * d1 + C * d2;
+    x1 = x;
+    d2 = d1;
+    d1 = y;
+    return y;
+}
+
 // KLGLOTT88 flow tau^2*(1-tau) blended with the legacy pulse; kGlotTilt sets
 // brightness (0 = full bass/-6 dB/oct, higher lifts presence).
 static constexpr float kGlotTilt = 0.10f;
@@ -142,16 +153,18 @@ KlattSynthesizerFP::KlattSynthesizerFP(int32_t sampleRate) {
 
     // Zero-initialise IIR coefficients.
     _f2A=_f2B=_f2C=0; _f3A=_f3B=_f3C=0;
-    _f4A=_f4B=_f4C=0; _f5cA=_f5cB=_f5cC=0;
+    _f4b0=_f4b1=_f4B=_f4C=0.0f; _f5cb0=_f5cb1=_f5cB=_f5cC=0.0f;
     _f4pA=_f4pB=_f4pC=0; _f5pA=_f5pB=_f5pC=0; _f6pA=_f6pB=_f6pC=0;
     _nzA=_nzB=_nzC=0; _npA=_npB=_npC=0;
 
-    // Cascade F1-F3 physical interpolation state: neutral (pole at origin).
+    // Cascade F1-F3 physical interpolation state: neutral (pole at origin, unity numerator).
     _f1r=0.0f; _f1cosw=1.0f; _f2r=0.0f; _f2cosw=1.0f; _f3r=0.0f; _f3cosw=1.0f;
+    _f1b0=1.0f; _f1b1=0.0f; _f2b0=1.0f; _f2b1=0.0f; _f3b0=1.0f; _f3b1=0.0f;
 
     // Zero-initialise delay taps and filter state.
     _f1D1=_f1D2=0; _f2D1=_f2D2=0; _f3D1=_f3D2=0;
     _f4D1=_f4D2=0; _f5cD1=_f5cD2=0;
+    _f1X1=_f2X1=_f3X1=_f4X1=_f5cX1=0.0f;
     _f2pD1=_f2pD2=0; _f3pD1=_f3pD2=0;
     _f4pD1=_f4pD2=0; _f5pD1=_f5pD2=0; _f6pD1=_f6pD2=0;
     _nzD1=_nzD2=0; _npD1=_npD2=0;
@@ -239,11 +252,8 @@ void KlattSynthesizerFP::SetVoice(int16_t nGain, bool bit16,
 void KlattSynthesizerFP::InitFixedFormants() {
     float A, B, C;
 
-    Calc_Pole_Coefficients(A, B, C, _f4cFreq, _f4cBW);
-    ToQ15(A, B, C, _f4A, _f4B, _f4C);
-
-    Calc_Pole_Coefficients(A, B, C, _f5cFreq, _f5cBW);
-    ToQ15(A, B, C, _f5cA, _f5cB, _f5cC);
+    Calc_Matched_Pole_Coefficients(_f4b0, _f4b1, _f4B, _f4C, _f4cFreq, _f4cBW);
+    Calc_Matched_Pole_Coefficients(_f5cb0, _f5cb1, _f5cB, _f5cC, _f5cFreq, _f5cBW);
 
     float nyq = _internalRate * 0.5f;
     auto pBankFade = [&](int16_t pitchCode) -> float {
@@ -375,6 +385,53 @@ void KlattSynthesizerFP::Calc_Pole_Coefficients(float& Acoeff, float& Bcoeff, fl
     Acoeff = 1.0f - Bcoeff - Ccoeff;
 }
 
+// Matched one-zero resonator (Vicanek 2016, "Matched Second Order Digital
+// Filters", sec 4.1): same impulse-invariant poles as Calc_Pole_Coefficients,
+// but numerator b0+b1*z^-1 fitted so |H| matches the analog resonance
+// prototype H(s)=w0^2/(w0^2+s*w0/Q+s^2) with f0=sqrt(F^2+(BW/2)^2), Q=f0/BW.
+void KlattSynthesizerFP::Calc_Matched_Pole_Coefficients(float& b0, float& b1,
+                                                          float& Bcoeff, float& Ccoeff,
+                                                          int16_t pitch, int16_t bandWidth,
+                                                          int32_t voiceMinBW) {
+    if (bandWidth > KMaxBandWidth) bandWidth = (int16_t)KMaxBandWidth;
+    if (bandWidth < voiceMinBW)    bandWidth = (int16_t)voiceMinBW;
+    if (pitch < 256)               pitch = 256;
+
+    double hz = (double)PitchToHz(pitch);
+    double nyquist = _internalRate * 0.5;
+    if (hz >= nyquist * 0.85) {
+        hz = nyquist * 0.80;
+        bandWidth = std::max(bandWidth, (int16_t)2000);
+    }
+    double bw = bandWidth, fs = _internalRate;
+    // Poles: identical values to Calc_Pole_Coefficients (Klatt sign convention).
+    double a1 = -2.0 * std::exp(-M_PI * bw / fs) * std::cos(2.0 * M_PI * hz / fs);
+    double a2 = std::exp(-2.0 * M_PI * bw / fs);
+    Bcoeff = (float)(-a1);
+    Ccoeff = (float)(-a2);
+
+    double f0 = std::sqrt(hz * hz + 0.25 * bw * bw);
+    double Q  = f0 / bw;
+    double w0 = 2.0 * M_PI * f0 / fs;
+    // Vicanek eq. 26-27, 31-34. Double precision required for the B1 cancellation.
+    double p1 = std::sin(0.5 * w0); p1 *= p1;
+    double p0 = 1.0 - p1;
+    double A0 = 1.0 + a1 + a2; A0 *= A0;
+    double A1 = 1.0 - a1 + a2; A1 *= A1;
+    double A2 = -4.0 * a2;
+    double R1 = (A0 * p0 + A1 * p1 + A2 * 4.0 * p0 * p1) * Q * Q;
+    double B1 = (R1 - A0 * p0) / p1;
+    double sB0 = 1.0 + a1 + a2;
+    if (B1 <= 0.0) {
+        // Degenerate fit: fall back to the all-pole unity-DC numerator.
+        b0 = (float)sB0;
+        b1 = 0.0f;
+        return;
+    }
+    b0 = (float)(0.5 * (sB0 + std::sqrt(B1)));
+    b1 = (float)(sB0 - b0);
+}
+
 void KlattSynthesizerFP::Calc_Zero_Coefficients(float& Acoeff, float& Bcoeff, float& Ccoeff,
                                                   int16_t pitch, int16_t bandWidth) {
     if (bandWidth > KMaxBandWidth) bandWidth = (int16_t)KMaxBandWidth;
@@ -412,16 +469,17 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
 #endif
         _sgD1=_sgD2=0;
         _f1D1=_f1D2=_f2D1=_f2D2=_f3D1=_f3D2=_f4D1=_f4D2=_f5cD1=_f5cD2=0;
+        _f1X1=_f2X1=_f3X1=_f4X1=_f5cX1=0.0f;
         _npD1=_npD2=_nzD1=_nzD2=0;
         _preemphPrev=0; _tiltPrev=0;
 
         float A,B,C;
-        Calc_Pole_Coefficients(A,B,C, AdjFormant((int16_t)(frame.F1+_f1FreqOffset),1), frame.Bw1);
+        Calc_Matched_Pole_Coefficients(_f1b0,_f1b1,B,C, AdjFormant((int16_t)(frame.F1+_f1FreqOffset),1), frame.Bw1);
         _f1r = sqrtf(-C); _f1cosw = (_f1r > 0.0f) ? B / (2.0f * _f1r) : 1.0f;
-        Calc_Pole_Coefficients(A,B,C, AdjFormant((int16_t)(frame.F2+_f2FreqOffset),2), frame.Bw2);
+        Calc_Matched_Pole_Coefficients(_f2b0,_f2b1,B,C, AdjFormant((int16_t)(frame.F2+_f2FreqOffset),2), frame.Bw2);
         _f2r = sqrtf(-C); _f2cosw = (_f2r > 0.0f) ? B / (2.0f * _f2r) : 1.0f;
         _f2B = (int32_t)(2.0f*_f2r*_f2cosw*32768.0f); _f2C = -(int32_t)(_f2r*_f2r*32768.0f); _f2A = 32768-_f2B-_f2C;
-        Calc_Pole_Coefficients(A,B,C, AdjFormant((int16_t)(frame.F3+_f3FreqOffset),3), frame.Bw3);
+        Calc_Matched_Pole_Coefficients(_f3b0,_f3b1,B,C, AdjFormant((int16_t)(frame.F3+_f3FreqOffset),3), frame.Bw3);
         _f3r = sqrtf(-C); _f3cosw = (_f3r > 0.0f) ? B / (2.0f * _f3r) : 1.0f;
         _f3B = (int32_t)(2.0f*_f3r*_f3cosw*32768.0f); _f3C = -(int32_t)(_f3r*_f3r*32768.0f); _f3A = 32768-_f3B-_f3C;
 
@@ -440,11 +498,11 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
         _pAmp5_q8=tPAmp5; _pAmp6_q8=tPAmp6;
     }
 
-    //  Target (r, cos) for variable cascade formants 
-    float f1TA,f1TB,f1TC, f2TA,f2TB,f2TC, f3TA,f3TB,f3TC;
-    Calc_Pole_Coefficients(f1TA,f1TB,f1TC, AdjFormant((int16_t)(frame.F1+_f1FreqOffset),1), frame.Bw1);
-    Calc_Pole_Coefficients(f2TA,f2TB,f2TC, AdjFormant((int16_t)(frame.F2+_f2FreqOffset),2), frame.Bw2);
-    Calc_Pole_Coefficients(f3TA,f3TB,f3TC, AdjFormant((int16_t)(frame.F3+_f3FreqOffset),3), frame.Bw3);
+    //  Target (r, cos) and matched numerator for variable cascade formants
+    float f1T_b0,f1T_b1,f1TB,f1TC, f2T_b0,f2T_b1,f2TB,f2TC, f3T_b0,f3T_b1,f3TB,f3TC;
+    Calc_Matched_Pole_Coefficients(f1T_b0,f1T_b1,f1TB,f1TC, AdjFormant((int16_t)(frame.F1+_f1FreqOffset),1), frame.Bw1);
+    Calc_Matched_Pole_Coefficients(f2T_b0,f2T_b1,f2TB,f2TC, AdjFormant((int16_t)(frame.F2+_f2FreqOffset),2), frame.Bw2);
+    Calc_Matched_Pole_Coefficients(f3T_b0,f3T_b1,f3TB,f3TC, AdjFormant((int16_t)(frame.F3+_f3FreqOffset),3), frame.Bw3);
 
     float f1T_r = sqrtf(-f1TC), f1T_cw = f1T_r > 0.0f ? f1TB/(2.0f*f1T_r) : 1.0f;
     float f2T_r = sqrtf(-f2TC), f2T_cw = f2T_r > 0.0f ? f2TB/(2.0f*f2T_r) : 1.0f;
@@ -474,6 +532,9 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
     float df1r =(f1T_r -_f1r) /SampFrameLen, df1cw=(f1T_cw-_f1cosw)/SampFrameLen;
     float df2r =(f2T_r -_f2r) /SampFrameLen, df2cw=(f2T_cw-_f2cosw)/SampFrameLen;
     float df3r =(f3T_r -_f3r) /SampFrameLen, df3cw=(f3T_cw-_f3cosw)/SampFrameLen;
+    float df1b0=(f1T_b0-_f1b0)/SampFrameLen, df1b1=(f1T_b1-_f1b1)/SampFrameLen;
+    float df2b0=(f2T_b0-_f2b0)/SampFrameLen, df2b1=(f2T_b1-_f2b1)/SampFrameLen;
+    float df3b0=(f3T_b0-_f3b0)/SampFrameLen, df3b1=(f3T_b1-_f3b1)/SampFrameLen;
     int32_t dNzA=(nzTA_q-_nzA)/SampFrameLen, dNzB=(nzTB_q-_nzB)/SampFrameLen, dNzC=(nzTC_q-_nzC)/SampFrameLen;
     int32_t dNasalNorm=(tNasalNorm_q15-_nasalNorm_q15)/SampFrameLen;
 
@@ -517,6 +578,10 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
         _f1r += df1r; _f1cosw += df1cw;
         _f2r += df2r; _f2cosw += df2cw;
         _f3r += df3r; _f3cosw += df3cw;
+        // Step matched numerators; b0>|b1| region is convex so interpolants stay minimum-phase.
+        _f1b0 += df1b0; _f1b1 += df1b1;
+        _f2b0 += df2b0; _f2b1 += df2b1;
+        _f3b0 += df3b0; _f3b1 += df3b1;
         // Derive float B/C for cascade; derive Q15 for F2/F3 parallel bank.
         float f1Bf = 2.0f*_f1r*_f1cosw, f1Cf = -_f1r*_f1r;
         float f2Bf = 2.0f*_f2r*_f2cosw, f2Cf = -_f2r*_f2r;
@@ -702,12 +767,12 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
                 // Nasal resonator (NP).
                 cascadeOutF = fp_iir_f(32768, _npB, _npC, cascadeOutF, _npD1, _npD2);
 
-                // Cascade F1F5.  F1-F3: all-float coefficients from (r,cos)  no Q15 rounding.
-                cascadeOutF = fp_iir_ff(1.0f-f1Bf-f1Cf, f1Bf, f1Cf, cascadeOutF, _f1D1, _f1D2);
-                cascadeOutF = fp_iir_ff(1.0f-f2Bf-f2Cf, f2Bf, f2Cf, cascadeOutF, _f2D1, _f2D2);
-                cascadeOutF = fp_iir_ff(1.0f-f3Bf-f3Cf, f3Bf, f3Cf, cascadeOutF, _f3D1, _f3D2);
-                cascadeOutF = fp_iir_f(_f4A, _f4B, _f4C, cascadeOutF, _f4D1, _f4D2);
-                cascadeOutF = fp_iir_f(_f5cA, _f5cB, _f5cC, cascadeOutF, _f5cD1, _f5cD2);
+                // Cascade F1F5: matched one-zero resonators (Vicanek 2016), all-float.
+                cascadeOutF = fp_iir_zff(_f1b0, _f1b1, f1Bf, f1Cf, cascadeOutF, _f1X1, _f1D1, _f1D2);
+                cascadeOutF = fp_iir_zff(_f2b0, _f2b1, f2Bf, f2Cf, cascadeOutF, _f2X1, _f2D1, _f2D2);
+                cascadeOutF = fp_iir_zff(_f3b0, _f3b1, f3Bf, f3Cf, cascadeOutF, _f3X1, _f3D1, _f3D2);
+                cascadeOutF = fp_iir_zff(_f4b0, _f4b1, _f4B, _f4C, cascadeOutF, _f4X1, _f4D1, _f4D2);
+                cascadeOutF = fp_iir_zff(_f5cb0, _f5cb1, _f5cB, _f5cC, cascadeOutF, _f5cX1, _f5cD1, _f5cD2);
             }
             cascadeOut = (int32_t)cascadeOutF;
 
@@ -791,6 +856,9 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
     _f1r = f1T_r; _f1cosw = f1T_cw;
     _f2r = f2T_r; _f2cosw = f2T_cw;
     _f3r = f3T_r; _f3cosw = f3T_cw;
+    _f1b0 = f1T_b0; _f1b1 = f1T_b1;
+    _f2b0 = f2T_b0; _f2b1 = f2T_b1;
+    _f3b0 = f3T_b0; _f3b1 = f3T_b1;
     // Keep F2/F3 Q15 in sync with snapped r/cos.
     _f2B=(int32_t)(2.0f*_f2r*_f2cosw*32768.0f); _f2C=-(int32_t)(_f2r*_f2r*32768.0f); _f2A=32768-_f2B-_f2C;
     _f3B=(int32_t)(2.0f*_f3r*_f3cosw*32768.0f); _f3C=-(int32_t)(_f3r*_f3r*32768.0f); _f3A=32768-_f3B-_f3C;

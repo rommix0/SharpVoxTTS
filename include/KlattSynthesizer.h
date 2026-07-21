@@ -115,6 +115,13 @@ namespace SharpVox {
         void Calc_Zero_Coefficients(float& Acoeff, float& Bcoeff, float& Ccoeff,
                                     int16_t pitch, int16_t bandWidth);
 
+        // Matched one-zero resonator (Vicanek 2016 sec 4.1): Klatt poles plus a fitted
+        // b0+b1*z^-1 numerator so |H| tracks the analog resonance prototype at any rate.
+        void Calc_Matched_Pole_Coefficients(float& b0, float& b1,
+                                            float& Bcoeff, float& Ccoeff,
+                                            int16_t pitch, int16_t bandWidth,
+                                            int32_t voiceMinBW = 50);
+
         static std::vector<int32_t> SupportedSampleRates();
 
     private:
@@ -123,11 +130,17 @@ namespace SharpVox {
 
         // Cascade resonator coefficients: A = gain, B = y[n-1] feedback, C = y[n-2] feedback.
         // F1-F3 are interpolated each frame; F4 and F5c are fixed per voice setting.
+        // A stays the all-pole 1-B-C gain for the parallel bank; the cascade instead
+        // uses the matched b0/b1 numerators below (Vicanek 2016).
         float _f1A, _f1B, _f1C;
         float _f2A, _f2B, _f2C;
         float _f3A, _f3B, _f3C;
-        float _f4A, _f4B, _f4C;
-        float _f5cA, _f5cB, _f5cC;
+        float _f4B, _f4C;
+        float _f5cB, _f5cC;
+
+        // Cascade matched one-zero numerators, interpolated per-sample for F1-F3.
+        float _f1b0, _f1b1, _f2b0, _f2b1, _f3b0, _f3b1;
+        float _f4b0, _f4b1, _f5cb0, _f5cb1;
 
         // Parallel bank resonator coefficients (F4p-F6p have their own fixed coefficients;
         // F2p and F3p reuse the cascade F2/F3 coefficients with separate delay taps).
@@ -145,6 +158,9 @@ namespace SharpVox {
         float _f3D1, _f3D2;
         float _f4D1, _f4D2;
         float _f5cD1, _f5cD2;
+
+        // Cascade input taps x[n-1] for the matched one-zero numerators.
+        float _f1X1, _f2X1, _f3X1, _f4X1, _f5cX1;
 
         // Parallel bank delay taps (F2p/F3p share cascade coefficients but have own delay taps).
         float _f2pD1, _f2pD2;
