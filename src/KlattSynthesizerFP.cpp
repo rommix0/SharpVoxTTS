@@ -566,6 +566,20 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
     frameTiltBias = std::max(-0.95f, std::min(0.95f, frameTiltBias));
     int32_t frameTiltBias_q15 = (int32_t)(frameTiltBias * 32768.0f);
 
+    // F0-dependent voicing gain compensation: cascade output climbs with F0,
+    // so attenuate voiced excitation above a reference pitch to avoid clipping.
+    float voiceF0Comp = 1.0f;
+    {
+        float f0Hz = (float)PitchToHz(frame.F0) + PitchOffsetHz;
+        const float kF0CompRef   = 220.0f;  // pitch at/below which gain is unchanged
+        const float kF0CompExp   = 0.85f;   // attenuation slope in log-pitch
+        const float kF0CompFloor = 0.40f;   // strongest attenuation allowed
+        if (f0Hz > kF0CompRef) {
+            voiceF0Comp = std::pow(kF0CompRef / f0Hz, kF0CompExp);
+            if (voiceF0Comp < kF0CompFloor) voiceF0Comp = kF0CompFloor;
+        }
+    }
+
     float breathGainBase = _breathGain / 8192.0f;
 
     //  Per-sample loop 
@@ -718,7 +732,7 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
                 _tiltPrev = tiltedSample;
 
                 cascadeInF = tiltedSample * (float)voiceAmpTrem_q8
-                             * (_shimmerScale / (256.0f * 8192.0f));
+                             * (_shimmerScale / (256.0f * 8192.0f)) * voiceF0Comp;
 
                 // Subglottal resonance (~350 Hz chest-cavity coupling).
                 if (SubglottalAmt > 0) {
