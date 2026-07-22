@@ -468,6 +468,8 @@ bool VoicePresets::SetParam(VoiceData& v, const std::string& name, float value) 
     else if (name == "vibratodepth1")  { v.VibratoDepth1Raw = clamp(value,    0,    100); }
     else if (name == "vibratodepth2")  { v.VibratoDepth2Raw = clamp(value,    0,    100); }
     else if (name == "vibratofreq")    { v.VibratoFreqRaw   = clamp(value,    0,    100); }
+    else if (name == "vibratodepth")   { v.VibratoDepth1Raw = v.VibratoDepth2Raw = clamp(value, 0, 100); }
+    else if (name == "vibratorate")    { v.VibratoFreqRaw   = clamp(value,    0,    100); }
     else if (name == "rvbdelay")       { v.RvbDelay         = clamp(value,    0,    500); }
     else if (name == "rvbdepth")       { v.RvbDepth         = clamp(value,    0,    100); }
     else return false;

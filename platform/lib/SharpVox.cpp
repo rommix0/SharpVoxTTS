@@ -26,9 +26,9 @@ std::string SharpVoxSpeaker::PrepareText(const std::string& text) {
     }
     char buf[256];
     std::snprintf(buf, sizeof(buf),
-        "b%.0f r%.0f v%.1f w%.1f h%.2f t%.2f g%.2f",
+        "b%.0f r%.0f v%.2f w%.1f h%.2f t%.2f g%.2f",
         (double)KlBaseF0, (double)KlRate,
-        (double)GetVibratoDepth(), (double)GetVibratoRate() / 10.0,
+        (double)VibratoDepthToKlattschHz(), (double)GetVibratoRate() / 10.0,
         (double)KlAsp, (double)KlTilt, (double)KlEffort);
     KlattschMode = false;
     return std::string("[:klattsch on] ") + buf + " " + text + " [:klattsch off]";

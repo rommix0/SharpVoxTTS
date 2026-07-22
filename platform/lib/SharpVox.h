@@ -1,6 +1,7 @@
 #ifndef SHARPVOX_H
 #define SHARPVOX_H
 
+#include <cmath>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -91,6 +92,13 @@ public:
 
     int32_t GetVibratoRate() const { return _vibratoRate; }
     void SetVibratoRate(int32_t v) { _vibratoRate = v; MarkCustom(); }
+
+    // Core vibrato depth is 0.128*raw pitch-units peak (256 units/octave, log).
+    // Klattsch synth vibrato is additive Hz, so convert at the base F0 to match.
+    float VibratoDepthToKlattschHz() const {
+        double peakUnits = 0.128 * (double)_vibratoDepth;
+        return (float)(KlBaseF0 * (std::pow(2.0, peakUnits / 256.0) - 1.0));
+    }
 
     // Glottal source
     int32_t GetJitter() const { return _jitter; }

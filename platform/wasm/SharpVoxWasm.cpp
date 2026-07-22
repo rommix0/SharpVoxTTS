@@ -734,9 +734,9 @@ private:
     std::string buildSynText(const std::string& text) {
         if (!_klattschMode) return text;
         char buf[256];
-        std::snprintf(buf, sizeof(buf), "b%.0f r%.0f v%.1f w%.1f h%.2f t%.2f g%.2f",
+        std::snprintf(buf, sizeof(buf), "b%.0f r%.0f v%.2f w%.1f h%.2f t%.2f g%.2f",
             (double)_speaker.KlBaseF0, (double)_speaker.KlRate,
-            (double)_speaker.GetVibratoDepth(), (double)_speaker.GetVibratoRate() / 10.0,
+            (double)_speaker.VibratoDepthToKlattschHz(), (double)_speaker.GetVibratoRate() / 10.0,
             (double)_speaker.KlAsp, (double)_speaker.KlTilt, (double)_speaker.KlEffort);
         return std::string("[:klattsch on] ") + buf + " " + text + " [:klattsch off]";
     }
