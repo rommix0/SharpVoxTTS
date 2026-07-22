@@ -93,28 +93,18 @@ static inline float GlotPulse(float tau) {
          + kGlotTilt * (tau * (0.33333333f - tau * 0.5f));
 }
 
-struct SampleRatePresetFP { float NoiseScale; };
-static const std::map<int32_t, SampleRatePresetFP> _ratePresetsFP = {
-    { 8000,  { 0.57f } },
-    { 11025, { 0.20f } },
-    { 22050, { 1.00f } },
-    { 44100, { 1.51f } },
-    { 48000, { 1.65f } },
-    { 96000, { 3.09f } },
-};
+static const int32_t kSupportedRatesFP[] = { 8000, 11025, 22050, 44100, 48000, 96000 };
 
 std::vector<int32_t> KlattSynthesizerFP::SupportedSampleRates() {
-    std::vector<int32_t> keys;
-    keys.reserve(_ratePresetsFP.size());
-    for (auto& kv : _ratePresetsFP) keys.push_back(kv.first);
-    return keys;
+    return std::vector<int32_t>(std::begin(kSupportedRatesFP), std::end(kSupportedRatesFP));
 }
 
-//  Constructor 
+//  Constructor
 
 KlattSynthesizerFP::KlattSynthesizerFP(int32_t sampleRate) {
-    auto it = _ratePresetsFP.find(sampleRate);
-    if (it == _ratePresetsFP.end()) {
+    bool supported = false;
+    for (int32_t r : kSupportedRatesFP) supported = supported || (r == sampleRate);
+    if (!supported) {
         throw std::invalid_argument(
             "Unsupported sample rate " + std::to_string(sampleRate) + " Hz.");
     }
@@ -123,7 +113,9 @@ KlattSynthesizerFP::KlattSynthesizerFP(int32_t sampleRate) {
 
     _sampleRate     = sampleRate;
     _internalRate   = sampleRate;
-    _noiseScale     = it->second.NoiseScale;
+    // White noise PSD in-band falls as 1/fs, so amplitude must rise as
+    // sqrt(fs) to keep noise loudness rate-invariant through fixed-Hz filters.
+    _noiseScale     = sqrtf((float)sampleRate / 22050.0f);
     // Rate-invariant since the preemph stage scales by fs/22050; the constant
     // is anchored so 48 kHz keeps the level the F0 headroom was tuned at.
     _outputGain     = 4.10f;
@@ -214,6 +206,11 @@ KlattSynthesizerFP::KlattSynthesizerFP(int32_t sampleRate) {
             *pq[i] = (int32_t)(p * 32768.0f);
             *gq[i] = (int32_t)(g * 32768.0f);
         }
+        // The two white passthrough terms need the same PSD compensation the
+        // poles get above: gain sqrt(fs/22050) keeps the flat tail level fixed.
+        float ws = sqrtf((float)sampleRate / 22050.0f);
+        _pnW0q15 = (int32_t)(17574.0f * ws);
+        _pnW1q15 = (int32_t)(3799.0f * ws);
     }
 
     _noiseSeed=0x12345;
@@ -250,9 +247,28 @@ void KlattSynthesizerFP::SetVoice(int16_t nGain, bool bit16,
     _nasalPoleFreq = HzToPitch(nasal_Base);
     _nasalPoleBW   = nasal_BW;
 
-    _noiseGain_q0 = (int32_t)(128.0f * _noiseAmp * _noiseScale);
+    // No _noiseScale here: the pink generator's pole and tail gains already
+    // hold its PSD rate-invariant, so scaling again overshot at high rates.
+    _noiseGain_q0 = (int32_t)(128.0f * _noiseAmp);
 
     InitFixedFormants();
+}
+
+// White-noise RMS gain of the DC-normalized two-pole resonator, applying
+// the same near-Nyquist clamp as Calc_Pole_Coefficients. Ratio against the
+// 22050 reference holds a parallel branch's noise loudness rate-invariant.
+static float ResonatorNoiseGain(float hz, float bw, float fs) {
+    float nyq = fs * 0.5f;
+    if (hz >= nyq * 0.85f) {
+        hz = nyq * 0.80f;
+        bw = std::max(bw, 2000.0f);
+    }
+    float r  = expf(-(float)M_PI * bw / fs);
+    float w0 = 2.0f * (float)M_PI * hz / fs;
+    float B = 2.0f * r * cosf(w0), C = -r * r, A = 1.0f - B - C;
+    // Closed form for sum h[n]^2 of 1/(1 - B/z - C/z^2), times fs to turn
+    // the normalized-frequency integral into Hz (input PSD is flat in Hz).
+    return A * sqrtf(fs * (1.0f - C) / ((1.0f + C) * ((1.0f - C) * (1.0f - C) - B * B)));
 }
 
 void KlattSynthesizerFP::InitFixedFormants() {
@@ -261,24 +277,25 @@ void KlattSynthesizerFP::InitFixedFormants() {
     Calc_Matched_Pole_Coefficients(_f4b0, _f4b1, _f4B, _f4C, _f4cFreq, _f4cBW);
     Calc_Matched_Pole_Coefficients(_f5cb0, _f5cb1, _f5cB, _f5cC, _f5cFreq, _f5cBW);
 
-    float nyq = _internalRate * 0.5f;
-    auto pBankFade = [&](int16_t pitchCode) -> float {
+    // No amplitude fade near Nyquist: Calc_Pole_Coefficients clamps such
+    // poles to 0.8*nyq with widened BW (S was fully silent at 8 kHz), and
+    // peak normalization keeps each branch's loudness rate-invariant.
+    auto noiseComp = [&](int16_t pitchCode, int16_t bwv) -> float {
         float hz = (float)PitchToHz(pitchCode);
-        if (hz >= nyq * 0.85f) return 0.0f;
-        if (hz <= nyq * 0.65f) return 1.0f;
-        return (nyq * 0.85f - hz) / (nyq * 0.20f);
+        return ResonatorNoiseGain(hz, (float)bwv, 22050.0f)
+             / ResonatorNoiseGain(hz, (float)bwv, (float)_internalRate);
     };
 
     Calc_Pole_Coefficients(A, B, C, _f4pFreq, _f4pBW);
-    A *= (KNoiseGain / 8192.0f) * pBankFade(_f4pFreq);
+    A *= (KNoiseGain / 8192.0f) * noiseComp(_f4pFreq, _f4pBW);
     ToQ15(A, B, C, _f4pA, _f4pB, _f4pC);
 
     Calc_Pole_Coefficients(A, B, C, _f5pFreq, _f5pBW);
-    A *= (KNoiseGain / 8192.0f) * pBankFade(_f5pFreq);
+    A *= (KNoiseGain / 8192.0f) * noiseComp(_f5pFreq, _f5pBW);
     ToQ15(A, B, C, _f5pA, _f5pB, _f5pC);
 
     Calc_Pole_Coefficients(A, B, C, _f6pFreq, _f6pBW);
-    A *= (KNoiseGain / 8192.0f) * pBankFade(_f6pFreq);
+    A *= (KNoiseGain / 8192.0f) * noiseComp(_f6pFreq, _f6pBW);
     ToQ15(A, B, C, _f6pA, _f6pB, _f6pC);
 
     Calc_Pole_Coefficients(A, B, C, _nasalPoleFreq, _nasalPoleBW);
@@ -362,8 +379,8 @@ int32_t KlattSynthesizerFP::NextPinkNoise_q15() {
     _pink4 = (int32_t)(((int64_t)_pnP4q15  * _pink4 + (int64_t)_pnG4q15 * w) >> 15);
     _pink5 = (int32_t)((-(int64_t)_pnP5mq15 * _pink5 - (int64_t)_pnG5q15 * w) >> 15);
     int32_t sum = _pink0 + _pink1 + _pink2 + _pink3 + _pink4 + _pink5
-                + _pink6 + (int32_t)(((int64_t)17574 * w) >> 15);
-    _pink6 = (int32_t)(((int64_t)3799 * w) >> 15);
+                + _pink6 + (int32_t)(((int64_t)_pnW0q15 * w) >> 15);
+    _pink6 = (int32_t)(((int64_t)_pnW1q15 * w) >> 15);
 
     return (int32_t)(((int64_t)5898 * sum) >> 15);
 }

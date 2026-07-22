@@ -214,6 +214,8 @@ namespace SharpVox {
         // Rate-adapted poles (Q15) and gains (Q15); _pnP5mq15 is positive magnitude.
         int32_t _pnP0q15,_pnP1q15,_pnP2q15,_pnP3q15,_pnP4q15,_pnP5mq15;
         int32_t _pnG0q15,_pnG1q15,_pnG2q15,_pnG3q15,_pnG4q15,_pnG5q15;
+        // White-tail gains (Q15), scaled sqrt(fs/22050) to keep tail PSD rate-invariant.
+        int32_t _pnW0q15,_pnW1q15;
 
         //  Noise PRNG 
         int32_t _noiseSeed;
