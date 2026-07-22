@@ -105,8 +105,10 @@ namespace SharpVox {
                                             int32_t voiceMinBW = 50);
 
         // Continuous accepted range; all rate compensation is analytic.
+        // Capped at 48k: frame-boundary interpolation residuals grow with
+        // SampFrameLen and become audible clicks above this.
         static const int32_t KMinSampleRate = 8000;
-        static const int32_t KMaxSampleRate = 192000;
+        static const int32_t KMaxSampleRate = 48000;
 
     private:
         int32_t _sampleRate;
