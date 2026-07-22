@@ -93,14 +93,14 @@ static inline float GlotPulse(float tau) {
          + kGlotTilt * (tau * (0.33333333f - tau * 0.5f));
 }
 
-struct SampleRatePresetFP { float NoiseScale; float OutputGain; };
+struct SampleRatePresetFP { float NoiseScale; };
 static const std::map<int32_t, SampleRatePresetFP> _ratePresetsFP = {
-    { 8000,  { 0.57f, 1.76f  } },
-    { 11025, { 0.20f, 2.57f  } },
-    { 22050, { 1.00f, 5.00f  } },
-    { 44100, { 1.51f, 8.53f  } },
-    { 48000, { 1.65f, 8.93f  } },
-    { 96000, { 3.09f, 11.59f } },
+    { 8000,  { 0.57f } },
+    { 11025, { 0.20f } },
+    { 22050, { 1.00f } },
+    { 44100, { 1.51f } },
+    { 48000, { 1.65f } },
+    { 96000, { 3.09f } },
 };
 
 std::vector<int32_t> KlattSynthesizerFP::SupportedSampleRates() {
@@ -124,7 +124,9 @@ KlattSynthesizerFP::KlattSynthesizerFP(int32_t sampleRate) {
     _sampleRate     = sampleRate;
     _internalRate   = sampleRate;
     _noiseScale     = it->second.NoiseScale;
-    _outputGain     = it->second.OutputGain;
+    // Rate-invariant since the preemph stage scales by fs/22050; the constant
+    // is anchored so 48 kHz keeps the level the F0 headroom was tuned at.
+    _outputGain     = 4.10f;
     _speechVolume   = 150.0f;
     _hfEmph         = true;
 
@@ -135,6 +137,10 @@ KlattSynthesizerFP::KlattSynthesizerFP(int32_t sampleRate) {
     // A fixed 0.97 puts the zero at a fixed fraction of Nyquist, which costs
     // ~1.5 dB of 2-4 kHz energy per doubling of rate. 22050 is the tuning anchor.
     _preemphA_q15 = (int32_t)(std::pow(0.97, 22050.0 / (double)sampleRate) * 32768.0 + 0.5);
+
+    // The differentiator's passband gain falls as 1/fs with the corner fixed
+    // in Hz; scaling by fs/22050 makes the output level rate-invariant.
+    _preemphScale_q12 = (int32_t)(4096.0 * sampleRate / 22050.0 + 0.5);
 
     // (1<<28)/sampleRate in Q4: glotPhaseInc = effF0Hz * _phaseIncPerHz_q4 >> 4
     _phaseIncPerHz_q4 = (int32_t)((1LL << 28) / sampleRate);
@@ -833,7 +839,7 @@ void KlattSynthesizerFP::SynthesizeFrame(Frame frame, int16_t* outputBuffer, int
             if (_hfEmph) {
                 int32_t pe = sample - (int32_t)(((int64_t)_preemphA_q15 * _preemphPrev) >> 15);
                 _preemphPrev = sample;
-                sample = pe;
+                sample = (int32_t)(((int64_t)pe * _preemphScale_q12) >> 12);
             }
 
             // Output gain on Q6 sample: product is Q21, rounded >>19 lands at
