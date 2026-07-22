@@ -14,15 +14,15 @@
 #include <Mw/Widget/Separator.h>
 
 // image assets
-#include "pau203a.xpm"
-#include "bet203a.xpm"
-#include "har203a.xpm"
-#include "fra203a.xpm"
-#include "den203a.xpm"
-#include "kid203a.xpm"
-#include "urs203a.xpm"
-#include "rit203a.xpm"
-#include "wen203a.xpm"
+#include "1.xpm"
+#include "2.xpm"
+#include "3.xpm"
+#include "4.xpm"
+#include "5.xpm"
+#include "6.xpm"
+#include "7.xpm"
+#include "8.xpm"
+#include "9.xpm"
 
 #include "SharpVox.h"
 #include "miniaudio.h"
@@ -182,15 +182,15 @@ MwWidget makeVoiceButton(MwWidget parent, MwLLPixmap img, std::string voice) {
 
 void makeVoiceBar(MwWidget parent) {
     // just associates the buttons with what voice they actually represent
-    makeVoiceButton(parent, MwLoadXPM (window, pau203a), "john");
-    makeVoiceButton(parent, MwLoadXPM (window, bet203a), "beth");
-    makeVoiceButton(parent, MwLoadXPM (window, har203a), "matt");
-    makeVoiceButton(parent, MwLoadXPM (window, fra203a), "jack");
-    makeVoiceButton(parent, MwLoadXPM (window, den203a), "chris");
-    makeVoiceButton(parent, MwLoadXPM (window, kid203a), "tommy");
-    makeVoiceButton(parent, MwLoadXPM (window, urs203a), "jess");
-    makeVoiceButton(parent, MwLoadXPM (window, rit203a), "deborah");
-    makeVoiceButton(parent, MwLoadXPM (window, wen203a), "whisper");
+    makeVoiceButton(parent, MwLoadXPM (window, img_1), "john");
+    makeVoiceButton(parent, MwLoadXPM (window, img_2), "beth");
+    makeVoiceButton(parent, MwLoadXPM (window, img_3), "matt");
+    makeVoiceButton(parent, MwLoadXPM (window, img_4), "jack");
+    makeVoiceButton(parent, MwLoadXPM (window, img_5), "chris");
+    makeVoiceButton(parent, MwLoadXPM (window, img_6), "tommy");
+    makeVoiceButton(parent, MwLoadXPM (window, img_7), "jess");
+    makeVoiceButton(parent, MwLoadXPM (window, img_8), "deborah");
+    makeVoiceButton(parent, MwLoadXPM (window, img_9), "whisper");
 }
 
 int main() {
