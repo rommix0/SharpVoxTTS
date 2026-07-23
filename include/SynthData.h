@@ -7,15 +7,22 @@
 
 namespace SharpVox {
 
-    // EXPERIMENT: high-rate intelligibility. Janse et al. (2003) found that at
-    // extreme speech rates uniform (linear) time-scaling is more intelligible than
+    // High-rate intelligibility. Janse et al. (2003) found that at extreme
+    // speech rates uniform (linear) time-scaling is more intelligible than
     // the natural non-linear pattern, so these helpers blend the duration model
     // toward linear as the rate climbs. Frac is 0 at/below kStart and 1.0 (65536)
     // at/above kFull; between, the natural incompressible timing is kept.
     namespace RateLin {
+        // kStart/kFull overridable via -D at build time; defaults are the shipped values.
+#ifndef SVX_LIN_START
+#define SVX_LIN_START 150
+#endif
+#ifndef SVX_LIN_FULL
+#define SVX_LIN_FULL 350
+#endif
         static constexpr int32_t kNormalRate = 180;  // matches AudioProcessor baseline
-        static constexpr int32_t kStart      = 150;  // wpm: below this, natural timing
-        static constexpr int32_t kFull       = 350;  // wpm: at/above this, fully linear
+        static constexpr int32_t kStart      = SVX_LIN_START;  // wpm: below this, natural timing
+        static constexpr int32_t kFull       = SVX_LIN_FULL;  // wpm: at/above this, fully linear
 
         // Q16 blend fraction in [0, 65536].
         static inline int32_t FracQ16(int32_t rate) {

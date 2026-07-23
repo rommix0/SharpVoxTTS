@@ -191,7 +191,7 @@ int32_t SpeechRenderer::OvX(int32_t x) const {
 void SpeechRenderer::InsertBurst() {
     if ((_curPhonFlags & kPlosiveF) != 0) {
         int32_t burstDur = Tables::BurstDurationTable[_curPhon] / kFrameTime;
-        // EXPERIMENT: shrink the fixed burst toward the linear tempo at high rates.
+        // Shrink the fixed burst toward the linear tempo at high rates.
         if (_transRateScaleQ16 != 65536) {
             burstDur = (int32_t)(((int64_t)burstDur * _transRateScaleQ16) >> 16);
             if (burstDur < 1) burstDur = 1;
@@ -255,8 +255,8 @@ void SpeechRenderer::InsertBurst() {
         } else if ((_curPhonCtrl & kVowelF) == 0) {
             rel += 20 / kFrameTime;
         }
-        // EXPERIMENT: shrink the fixed aspiration/VOT window toward the linear tempo
-        // at high rates, unless a full plosive release already forced rel below.
+        // Shrink the fixed aspiration/VOT window toward the linear tempo at high
+        // rates, unless a full plosive release already forced rel below.
         if (_transRateScaleQ16 != 65536 && (_curPhonCtrl & kPlosive_Release) == 0) {
             rel = (int32_t)(((int64_t)rel * _transRateScaleQ16) >> 16);
             if (rel < 1) rel = 1;
@@ -784,17 +784,25 @@ int32_t SpeechRenderer::ScalePrcnt(int32_t pct) {
     return t <= 0 ? 1 : (int32_t)t;
 }
 
-// EXPERIMENT: high-rate intelligibility (Janse et al. 2003). See RateLin in
-// SynthData.h. Scales a fixed transition length toward the linear tempo. Full
-// or zero-length transitions pass through so held segments are not disturbed.
+// High-rate intelligibility (Janse et al. 2003). See RateLin in SynthData.h.
+// Scales a fixed transition length toward the linear tempo. Full or zero-length
+// transitions pass through so held segments are not disturbed.
 int32_t SpeechRenderer::LinearizeTransTime(int32_t t) {
     if (t <= 0 || t >= _curPhonDur) return t;
+    // At/below normal rate the scale is identity; leave the ramp untouched so the
+    // baseline output stays bit-identical to the unscaled path.
+    if (_transRateScaleQ16 >= 65536) return t;
     int64_t s = ((int64_t)t * _transRateScaleQ16) >> 16;
-    // A ramp shorter than a few frames steps its whole delta almost instantly and
-    // clicks, so never shrink below kMinTransFrames (unless it already was shorter).
-    int32_t floor = t < kMinTransFrames ? t : kMinTransFrames;
-    if (s < floor) s = floor;
-    if (s > _curPhonDur) s = _curPhonDur;
+    // Cap each ramp at kMaxTransPct of the phoneme so a steady-state core always
+    // survives. Without this the floored head+tail ramps consume short high-rate
+    // phonemes whole, so formants never reach target (undershoot, "muddy" glides).
+    int32_t cap = (_curPhonDur * kMaxTransPct) / 100;
+    // Keep a minimum ramp so the delta is not stepped in a single frame (click),
+    // unless the cap is tighter (very short phoneme wins to preserve the core).
+    int32_t lo = t < kMinTransFrames ? t : kMinTransFrames;
+    if (lo > cap) lo = cap;
+    if (s < lo) s = lo;
+    if (s > cap) s = cap;
     return (int32_t)s;
 }
 
@@ -994,6 +1002,11 @@ void SpeechRenderer::InitCtrlsForNewPhon() {
         _transTime  = 25 / kFrameTime;
         TailRules(cb, bt);
         _transTime  = LinearizeTransTime(_transTime);
+        // Keep the TAIL start in sync with the linearized transition length.
+        // TailRules set TAIL_START_time from the pre-linearized _transTime; without
+        // this the ramp accumulates for more frames than its step is sized for and
+        // overshoots badly at high rate, swamping the diphthong's own trajectory.
+        cb.TAIL_START_time = _curPhonDur - _transTime;
 
         cb.TAIL_offs = 0; cb.TAIL_step = 0;
         if (_transTime > 0) {
